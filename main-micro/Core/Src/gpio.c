@@ -54,7 +54,7 @@ void MX_GPIO_Init(void)
   LL_GPIO_ResetOutputPin(GPIOC, LED_Pin|MOTORS_ENABLE_Pin|MOTOR2_DIRECTION_Pin);
 
   /**/
-  LL_GPIO_ResetOutputPin(GPIOB, MOTOR3_PWM_Pin|MOTOR4_DIRECTION_Pin|MOTOR1_DIRECTION_Pin);
+  LL_GPIO_ResetOutputPin(GPIOB, MOTOR3_DIRECTION_Pin|MOTOR4_DIRECTION_Pin|MOTOR1_DIRECTION_Pin);
 
   /**/
   GPIO_InitStruct.Pin = Key_Pin|StartKey_Pin;
@@ -71,7 +71,7 @@ void MX_GPIO_Init(void)
   LL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /**/
-  GPIO_InitStruct.Pin = MOTOR3_PWM_Pin|MOTOR4_DIRECTION_Pin|MOTOR1_DIRECTION_Pin;
+  GPIO_InitStruct.Pin = MOTOR3_DIRECTION_Pin|MOTOR4_DIRECTION_Pin|MOTOR1_DIRECTION_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
