@@ -8,9 +8,6 @@
 #define DEGREE_TO_RADIAN 0.01744
 #define RADIAN_TO_DEGREE 57.2957
 #define Pi 3.1415
-#define GET_BALL_DISTANCE 12
-#define LEFT_TOLERANCE_ANGLE 335
-#define RIGHT_TOLERANCE_ANGLE 25
 
 typedef struct
 {

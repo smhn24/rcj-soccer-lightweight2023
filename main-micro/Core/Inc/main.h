@@ -103,10 +103,10 @@ void Error_Handler(void);
 #define TSSP1_GPIO_Port GPIOC
 #define TSSP14_Pin LL_GPIO_PIN_7
 #define TSSP14_GPIO_Port GPIOC
-#define TSSP15_Pin LL_GPIO_PIN_8
-#define TSSP15_GPIO_Port GPIOC
-#define TSSP0_Pin LL_GPIO_PIN_9
+#define TSSP0_Pin LL_GPIO_PIN_8
 #define TSSP0_GPIO_Port GPIOC
+#define TSSP15_Pin LL_GPIO_PIN_9
+#define TSSP15_GPIO_Port GPIOC
 #define MOTOR2_PWM_Pin LL_GPIO_PIN_8
 #define MOTOR2_PWM_GPIO_Port GPIOA
 #define MOTOR3_PWM_Pin LL_GPIO_PIN_9

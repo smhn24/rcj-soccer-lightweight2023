@@ -26,10 +26,13 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
 
 #include "keys.h"
 #include "robot_movement.h"
 #include "bno055.h"
+#include "tssp_helper.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,81 +53,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-const int motor_speed_table[72][2] = {
-    {1980, 1980},
-    {2145, 1800},
-    {2290, 1610},
-    {2425, 1400},
-    {2535, 1185},
-    {2630, 960},
-    {2705, 725},
-    {2755, 490},
-    {2790, 245},
-    {2800, 5},
-    {2790, -240},
-    {2760, -485},
-    {2705, -720},
-    {2635, -955},
-    {2540, -1180},
-    {2425, -1395},
-    {2295, -1600},
-    {2150, -1795},
-    {1985, -1975},
-    {1805, -2140},
-    {1610, -2290},
-    {1405, -2420},
-    {1190, -2535},
-    {965, -2630},
-    {730, -2705},
-    {490, -2755},
-    {250, -2790},
-    {5, -2800},
-    {-235, -2790},
-    {-480, -2760},
-    {-720, -2705},
-    {-950, -2635},
-    {-1175, -2540},
-    {-1395, -2430},
-    {-1600, -2300},
-    {-1795, -2150},
-    {-1975, -1985},
-    {-2140, -1805},
-    {-2290, -1615},
-    {-2420, -1410},
-    {-2535, -1190},
-    {-2630, -965},
-    {-2700, -735},
-    {-2755, -495},
-    {-2790, -255},
-    {-2800, -10},
-    {-2790, 235},
-    {-2760, 475},
-    {-2705, 715},
-    {-2635, 950},
-    {-2540, 1175},
-    {-2430, 1390},
-    {-2300, 1595},
-    {-2150, 1790},
-    {-1990, 1970},
-    {-1810, 2135},
-    {-1615, 2285},
-    {-1410, 2420},
-    {-1195, 2530},
-    {-970, 2625},
-    {-735, 2700},
-    {-500, 2755},
-    {-255, 2790},
-    {-15, 2800},
-    {245, 2790},
-    {485, 2760},
-    {725, 2705},
-    {955, 2630},
-    {1180, 2540},
-    {1400, 2425},
-    {1605, 2295},
-    {1800, 2145},
-};
-uint8_t tx_buff[100];
+volatile uint8_t tx_buff[100];
+volatile TSSP sensors[16];
+volatile BALL ball;
+volatile uint16_t width_temp[16][AVERAGE_DATA_NUMBER] = {0};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -174,12 +106,44 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM8_Init();
   MX_TIM12_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
+
+  //* PWM timers
   HAL_TIM_Base_Start(&htim1);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); //? Motor 2
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2); //? Motor 3
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3); //? Motor 4
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4); //? Motor 1
+
+  //* Input Capture timers for TSSP sensors
+  HAL_TIM_Base_Start_IT(&htim2);
+  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1); //? TSSP7
+  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_2); //? TSSP8
+  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3); //? TSSP4
+  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4); //? TSSP11
+
+  HAL_TIM_Base_Start_IT(&htim3);
+  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_1); //? TSSP6
+  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_2); //? TSSP9
+  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_3); //? TSSP3
+  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_4); //? TSSP12
+
+  HAL_TIM_Base_Start_IT(&htim5);
+  HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_1); //? TSSP5
+  HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_2); //? TSSP10
+
+  HAL_TIM_Base_Start_IT(&htim8);
+  HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_1); //? TSSP1
+  HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_2); //? TSSP14
+  HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_3); //? TSSP15
+  HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_4); //? TSSP0
+
+  HAL_TIM_Base_Start_IT(&htim12);
+  HAL_TIM_IC_Start_IT(&htim12, TIM_CHANNEL_1); //? TSSP2
+  HAL_TIM_IC_Start_IT(&htim12, TIM_CHANNEL_2); //? TSSP13
+
+  HAL_TIM_Base_Start_IT(&htim4); //? Start timer for checkout tssp pulses
 
   LL_mDelay(2000);
   BNO055_Config();
@@ -187,16 +151,20 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  // ball.max_sensor = 0;
+  // ball.max_value = sensors[0].width;
+  LL_GPIO_SetOutputPin(LED_GPIO_Port, LED_Pin);
   MOTORS_DISABLE();
+  //! Wait to start the task
   while (1)
   {
     if (START_KEY_STATUS())
     {
       LL_mDelay(5);
-      LL_GPIO_SetOutputPin(LED_GPIO_Port, LED_Pin);
-      while (START_KEY_STATUS())
-        ;
       LL_GPIO_ResetOutputPin(LED_GPIO_Port, LED_Pin);
+      while (START_KEY_STATUS())
+      {
+      }
       break;
     }
   }
@@ -204,7 +172,10 @@ int main(void)
   MOTORS_ENABLE();
   while (1)
   {
-    robot_move(0, 0);
+    measure_ball_data(sensors, &ball);
+    get_ball(&ball);
+    // sprintf(tx_buff, "Angle: %d    Dist1: %d\r\n", ball.angle, ball.distance);
+    // HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

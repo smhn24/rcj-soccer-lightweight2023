@@ -1,6 +1,87 @@
 #include "robot_movement.h"
 
-extern const int motor_speed_table[72][2];
+/*  Motors number
+    2/         \1
+
+
+    3\         /4
+*/
+
+//? Lookup table for omni-directional movement with 5 degrees resolution
+const int motor_speed_table[72][2] = {
+    {1980, 1980},
+    {2145, 1800},
+    {2290, 1610},
+    {2425, 1400},
+    {2535, 1185},
+    {2630, 960},
+    {2705, 725},
+    {2755, 490},
+    {2790, 245},
+    {2800, 5},
+    {2790, -240},
+    {2760, -485},
+    {2705, -720},
+    {2635, -955},
+    {2540, -1180},
+    {2425, -1395},
+    {2295, -1600},
+    {2150, -1795},
+    {1985, -1975},
+    {1805, -2140},
+    {1610, -2290},
+    {1405, -2420},
+    {1190, -2535},
+    {965, -2630},
+    {730, -2705},
+    {490, -2755},
+    {250, -2790},
+    {5, -2800},
+    {-235, -2790},
+    {-480, -2760},
+    {-720, -2705},
+    {-950, -2635},
+    {-1175, -2540},
+    {-1395, -2430},
+    {-1600, -2300},
+    {-1795, -2150},
+    {-1975, -1985},
+    {-2140, -1805},
+    {-2290, -1615},
+    {-2420, -1410},
+    {-2535, -1190},
+    {-2630, -965},
+    {-2700, -735},
+    {-2755, -495},
+    {-2790, -255},
+    {-2800, -10},
+    {-2790, 235},
+    {-2760, 475},
+    {-2705, 715},
+    {-2635, 950},
+    {-2540, 1175},
+    {-2430, 1390},
+    {-2300, 1595},
+    {-2150, 1790},
+    {-1990, 1970},
+    {-1810, 2135},
+    {-1615, 2285},
+    {-1410, 2420},
+    {-1195, 2530},
+    {-970, 2625},
+    {-735, 2700},
+    {-500, 2755},
+    {-255, 2790},
+    {-15, 2800},
+    {245, 2790},
+    {485, 2760},
+    {725, 2705},
+    {955, 2630},
+    {1180, 2540},
+    {1400, 2425},
+    {1605, 2295},
+    {1800, 2145},
+};
 
 void set_motors(int motor_1, int motor_2, int motor_3, int motor_4)
 {
@@ -61,7 +142,7 @@ void set_motors(int motor_1, int motor_2, int motor_3, int motor_4)
     //******************************************
 }
 
-// Robot angle is our error because target is 0
+//? Robot angle is our error because target is 0
 int pid_calculator(int error)
 {
     static int previous_error = 0;
@@ -92,12 +173,12 @@ int pid_calculator(int error)
 
 void robot_move(int angle, float percent_speed)
 {
-    int m1 = 0, m2 = 0, m3 = 0, m4 = 0; // motors value
+    int m1 = 0, m2 = 0, m3 = 0, m4 = 0; //? motors value
     int pid_value;
 
     pid_value = pid_calculator(BNO055_read());
 
-    // Add pid value to omni-directional
+    //* Add pid value to omni-directional
     m1 = -pid_value;
     m2 = pid_value;
     m3 = pid_value;
@@ -108,11 +189,50 @@ void robot_move(int angle, float percent_speed)
         angle += 360;
     angle /= 5;
 
-    // omni-directional
+    //* omni-directional
     m1 += motor_speed_table[angle][1] * percent_speed;
     m2 += motor_speed_table[angle][0] * percent_speed;
     m3 += motor_speed_table[angle][1] * percent_speed;
     m4 += motor_speed_table[angle][0] * percent_speed;
 
     set_motors(m1, m2, m3, m4);
+}
+
+inline void get_ball(BALL *ball)
+{
+    if (ball->distance > GET_BALL_DISTANCE)
+    {
+        if (ball->angle > LEFT_TOLERANCE_ANGLE || ball->angle < RIGHT_TOLERANCE_ANGLE)
+        {
+            ball->get_ball_offset = 0;
+            // ball->get_ball_speed = 0.7;
+        }
+        else if (ball->angle >= RIGHT_TOLERANCE_ANGLE && ball->angle <= 180) //? Ball is right of the robot
+        {
+            ball->get_ball_offset = (int)(asinf((float)10 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
+            // ball->get_ball_offset = 90;
+            // ball->get_ball_speed = 0.7;
+        }
+        else if (ball->angle > 180 && ball->angle <= LEFT_TOLERANCE_ANGLE) //? Ball is left of the robot
+        {
+            ball->get_ball_offset = (int)(-asinf((float)10 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
+            // ball->get_ball_offset = -90;
+            // ball->get_ball_speed = 0.7;
+        }
+        ball->get_ball_angle = ball->get_ball_offset + ball->angle;
+    }
+    else
+    {
+        ball->get_ball_angle = ball->angle;
+        ball->get_ball_speed = 0.8;
+    }
+
+    if (ball->distance < 2)
+    {
+        robot_move(0, 0);
+    }
+    else
+    {
+        robot_move(ball->get_ball_angle, 0.7);
+    }
 }
