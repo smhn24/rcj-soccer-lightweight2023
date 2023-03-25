@@ -184,7 +184,6 @@ void robot_move(int angle, float percent_speed)
     m3 = pid_value;
     m4 = -pid_value;
 
-    angle -= 1;
     if (angle < 0)
         angle += 360;
     angle /= 5;
@@ -205,19 +204,17 @@ inline void get_ball(BALL *ball)
         if (ball->angle > LEFT_TOLERANCE_ANGLE || ball->angle < RIGHT_TOLERANCE_ANGLE)
         {
             ball->get_ball_offset = 0;
-            // ball->get_ball_speed = 0.7;
+            ball->get_ball_speed = 0.7;
         }
         else if (ball->angle >= RIGHT_TOLERANCE_ANGLE && ball->angle <= 180) //? Ball is right of the robot
         {
-            ball->get_ball_offset = (int)(asinf((float)10 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            // ball->get_ball_offset = 90;
-            // ball->get_ball_speed = 0.7;
+            ball->get_ball_offset = (int)(asinf((float)11 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
+            ball->get_ball_speed = 0.5;
         }
         else if (ball->angle > 180 && ball->angle <= LEFT_TOLERANCE_ANGLE) //? Ball is left of the robot
         {
-            ball->get_ball_offset = (int)(-asinf((float)10 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            // ball->get_ball_offset = -90;
-            // ball->get_ball_speed = 0.7;
+            ball->get_ball_offset = (int)(-asinf((float)11 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
+            ball->get_ball_speed = 0.5;
         }
         ball->get_ball_angle = ball->get_ball_offset + ball->angle;
     }
@@ -233,6 +230,6 @@ inline void get_ball(BALL *ball)
     }
     else
     {
-        robot_move(ball->get_ball_angle, 0.7);
+        robot_move(ball->get_ball_angle, 0.5);
     }
 }

@@ -9,7 +9,8 @@
 #define TSSP_MAX_TIMEOUT 7
 #define Pi 3.14
 #define MEDIAN_READINGS 5
-#define AVERAGE_DATA_NUMBER 30
+// #define AVERAGE_DATA_NUMBER 30
+#define AVERAGE_DATA_NUMBER 20
 #define DISTANCE_OFFSET 100
 
 typedef struct

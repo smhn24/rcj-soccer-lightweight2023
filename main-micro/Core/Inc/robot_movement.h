@@ -9,7 +9,8 @@
 #define GET_BALL_DISTANCE 12
 #define LEFT_TOLERANCE_ANGLE 335
 #define RIGHT_TOLERANCE_ANGLE 25
-#define MAX_DISTANCE 28.1 //? 10 + maxmimum distance
+// #define MAX_DISTANCE 28.1 //? 10 + maxmimum distance
+#define MAX_DISTANCE 29.1 //? 11 + maxmimum distance
 
 #define KP 17
 #define KI 0

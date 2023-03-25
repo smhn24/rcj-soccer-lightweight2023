@@ -174,8 +174,6 @@ int main(void)
   {
     measure_ball_data(sensors, &ball);
     get_ball(&ball);
-    // sprintf(tx_buff, "Angle: %d    Dist1: %d\r\n", ball.angle, ball.distance);
-    // HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
