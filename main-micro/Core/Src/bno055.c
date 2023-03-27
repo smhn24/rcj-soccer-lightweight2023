@@ -1,4 +1,5 @@
 #include "bno055.h"
+#include "helpers.h"
 
 void BNO055_Config(void)
 {
@@ -10,7 +11,8 @@ void BNO055_Config(void)
     HAL_Delay(50);
 
     configData[0] = 0x3D;
-    configData[1] = 0x0C;
+    // configData[1] = 0x0C;
+    configData[1] = 0x0B;
 
     HAL_I2C_Master_Transmit(&hI2C, BNO055_ADDRESS, configData, 2, 100);
     HAL_Delay(50);
@@ -18,6 +20,7 @@ void BNO055_Config(void)
 
 int16_t BNO055_read(void)
 {
+    // TurnOnLED(); //! Debug
     uint8_t angleData[2];
     int16_t angle;
 
@@ -27,5 +30,6 @@ int16_t BNO055_read(void)
     HAL_I2C_Master_Receive(&hI2C, BNO055_ADDRESS, angleData, 2, 100);
 
     angle = ((int16_t)(angleData[0] | angleData[1] << 8) / 16);
+    // TurnOffLED(); //! Debug
     return angle;
 }

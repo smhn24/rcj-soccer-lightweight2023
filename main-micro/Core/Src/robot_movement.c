@@ -7,6 +7,9 @@
     3\         /4
 */
 
+extern Robot robot;
+extern uint16_t brake_time;
+
 //? Lookup table for omni-directional movement with 5 degrees resolution
 const int motor_speed_table[72][2] = {
     {1980, 1980},
@@ -146,7 +149,6 @@ void set_motors(int motor_1, int motor_2, int motor_3, int motor_4)
 int pid_calculator(int error)
 {
     static int previous_error = 0;
-    static int32_t i = 0;
     int pid, p, d;
 
     error = (int)fabs((float)error) < 2 ? 0 : error;
@@ -157,15 +159,9 @@ int pid_calculator(int error)
     }
 
     p = -error;
-    i += p;
     d = error - previous_error;
 
-    if ((int)fabs(error) < 4)
-    {
-        i = 0;
-    }
-
-    pid = (KP * p) + (KI * i) + (KD * d);
+    pid = (KP * p) + (KD * d);
     previous_error = error;
 
     return pid;
@@ -176,7 +172,7 @@ void robot_move(int angle, float percent_speed)
     int m1 = 0, m2 = 0, m3 = 0, m4 = 0; //? motors value
     int pid_value;
 
-    pid_value = pid_calculator(BNO055_read());
+    pid_value = pid_calculator(robot.angle);
 
     //* Add pid value to omni-directional
     m1 = -pid_value;
@@ -184,6 +180,7 @@ void robot_move(int angle, float percent_speed)
     m3 = pid_value;
     m4 = -pid_value;
 
+    angle -= 1;
     if (angle < 0)
         angle += 360;
     angle /= 5;
@@ -204,32 +201,39 @@ inline void get_ball(BALL *ball)
         if (ball->angle > LEFT_TOLERANCE_ANGLE || ball->angle < RIGHT_TOLERANCE_ANGLE)
         {
             ball->get_ball_offset = 0;
-            ball->get_ball_speed = 0.7;
+            robot.percent_speed = MAX_SPEED_PERCENT;
         }
         else if (ball->angle >= RIGHT_TOLERANCE_ANGLE && ball->angle <= 180) //? Ball is right of the robot
         {
             ball->get_ball_offset = (int)(asinf((float)11 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            ball->get_ball_speed = 0.5;
+            robot.percent_speed = MAX_GET_BALL_SPEED_PERCENT;
         }
         else if (ball->angle > 180 && ball->angle <= LEFT_TOLERANCE_ANGLE) //? Ball is left of the robot
         {
             ball->get_ball_offset = (int)(-asinf((float)11 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            ball->get_ball_speed = 0.5;
+            robot.percent_speed = MAX_GET_BALL_SPEED_PERCENT;
         }
-        ball->get_ball_angle = ball->get_ball_offset + ball->angle;
+        robot.move_angle = ball->get_ball_offset + ball->angle;
     }
     else
     {
-        ball->get_ball_angle = ball->angle;
-        ball->get_ball_speed = 0.8;
+        robot.move_angle = ball->angle;
+        robot.percent_speed = MAX_SPEED_PERCENT;
     }
 
     if (ball->distance < 2)
     {
-        robot_move(0, 0);
+        robot.move_angle = 0;
+        robot.percent_speed = 0;
     }
-    else
+}
+
+inline void robot_brake(int angle, float percent_speed, uint16_t time)
+{
+    brake_time = 0;
+    while (brake_time < time)
     {
-        robot_move(ball->get_ball_angle, 0.5);
+        robot_move(angle, percent_speed);
+        LL_mDelay(2);
     }
 }

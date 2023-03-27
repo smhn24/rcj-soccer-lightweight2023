@@ -7,18 +7,11 @@
 
 #define DEGREE_TO_RADIAN 0.01744
 #define RADIAN_TO_DEGREE 57.2957
-#define Pi 3.1415
+#define Pi 3.141592
 
-typedef struct
-{
-    volatile bool start_status;
-    volatile int angle;
-    volatile int get_ball_angle;
-    volatile int ball_angle;
-    volatile int ball_distance;
-    volatile int offset;
-} Robot;
+#define TurnOnLED() LL_GPIO_SetOutputPin(LED_GPIO_Port, LED_Pin);
+#define TurnOffLED() LL_GPIO_ResetOutputPin(LED_GPIO_Port, LED_Pin);
 
-uint16_t combine_int(uint8_t high_byte, uint8_t low_byte);
+uint32_t convert24to32(uint8_t msb, uint8_t mid, uint8_t lsb);
 
 #endif

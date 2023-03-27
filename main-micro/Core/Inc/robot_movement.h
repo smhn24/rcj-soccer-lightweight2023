@@ -6,14 +6,15 @@
 #include "helpers.h"
 
 #define MAX_VELOCITY 2800
-#define GET_BALL_DISTANCE 12
+// #define GET_BALL_DISTANCE 12
+#define GET_BALL_DISTANCE 10
 #define LEFT_TOLERANCE_ANGLE 335
 #define RIGHT_TOLERANCE_ANGLE 25
-// #define MAX_DISTANCE 28.1 //? 10 + maxmimum distance
 #define MAX_DISTANCE 29.1 //? 11 + maxmimum distance
+#define MAX_SPEED_PERCENT 0.8
+#define MAX_GET_BALL_SPEED_PERCENT 0.5
 
 #define KP 17
-#define KI 0
 #define KD 0
 
 #define MOTORS_ENABLE() LL_GPIO_SetOutputPin(MOTORS_ENABLE_GPIO_Port, MOTORS_ENABLE_Pin)
@@ -32,9 +33,17 @@
 #define SET_MOTOR_3(pwm) TIM1->CCR2 = pwm
 #define SET_MOTOR_4(pwm) TIM1->CCR3 = pwm
 
-extern inline void get_ball(BALL *ball);
+typedef struct
+{
+    volatile float percent_speed;
+    volatile int angle;
+    volatile int move_angle;
+} Robot;
+
+void get_ball(BALL *ball);
 void set_motors(int motor_1, int motor_2, int motor_3, int motor_4);
 void robot_move(int angle, float percent_speed);
 int pid_calculator(int error);
+// void robot_brake(int angle, float percent_speed, uint16_t time);
 
 #endif

@@ -33,6 +33,7 @@
 #include "robot_movement.h"
 #include "bno055.h"
 #include "tssp_helper.h"
+#include "line_sensor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,7 +57,17 @@
 volatile uint8_t tx_buff[100];
 volatile TSSP sensors[16];
 volatile BALL ball;
+volatile Robot robot;
 volatile uint16_t width_temp[16][AVERAGE_DATA_NUMBER] = {0};
+volatile uint16_t brake_time = 0;
+volatile uint8_t out_data[3] = {0};
+// volatile uint32_t out_digital = 0;
+volatile uint8_t on_line_sensors = 0;
+volatile bool line_sensors[20] = {0};
+
+//* Tasks *//
+volatile uint8_t Task1ms = 0, Task5ms = 0, Task10ms = 0, Task50ms = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -107,6 +118,7 @@ int main(void)
   MX_TIM8_Init();
   MX_TIM12_Init();
   MX_TIM4_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
   //* PWM timers
@@ -144,16 +156,15 @@ int main(void)
   HAL_TIM_IC_Start_IT(&htim12, TIM_CHANNEL_2); //? TSSP13
 
   HAL_TIM_Base_Start_IT(&htim4); //? Start timer for checkout tssp pulses
+  HAL_TIM_Base_Start_IT(&htim7); //? Start timer for change tasks
 
-  LL_mDelay(2000);
+  LL_mDelay(2000); //! Wait for BNO055 to be ready
   BNO055_Config();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  // ball.max_sensor = 0;
-  // ball.max_value = sensors[0].width;
-  LL_GPIO_SetOutputPin(LED_GPIO_Port, LED_Pin);
+  TurnOnLED();
   MOTORS_DISABLE();
   //! Wait to start the task
   while (1)
@@ -161,7 +172,7 @@ int main(void)
     if (START_KEY_STATUS())
     {
       LL_mDelay(5);
-      LL_GPIO_ResetOutputPin(LED_GPIO_Port, LED_Pin);
+      TurnOffLED();
       while (START_KEY_STATUS())
       {
       }
@@ -169,11 +180,59 @@ int main(void)
     }
   }
 
-  MOTORS_ENABLE();
+  // MOTORS_ENABLE();
+
+  Task1ms = 0;
+  Task5ms = 0;
+  Task10ms = 0;
+  Task50ms = 0;
+
   while (1)
   {
-    measure_ball_data(sensors, &ball);
-    get_ball(&ball);
+    robot.angle = BNO055_read();
+
+    if (Task1ms)
+    {
+      Task1ms = 0;
+      measure_ball_data(sensors, &ball);
+    }
+
+    if (Task5ms > 4)
+    {
+      Task5ms = 0;
+      get_ball(&ball);
+      robot_move(robot.move_angle, robot.percent_speed);
+    }
+
+    if (Task10ms > 9)
+    {
+      Task10ms = 0;
+
+      read_line_sensors(line_sensors, out_data);
+      on_line_sensors = 0;
+      for (uint8_t i = 0; i < 20; i++)
+      {
+        if (line_sensors[i])
+        {
+          on_line_sensors++;
+        }
+      }
+    }
+
+    if (Task50ms > 49)
+    {
+      Task50ms = 0;
+      // sprintf(tx_buff, "Angle: %d    Distance: %d    Ball angle: %d\r\n", robot.angle, ball.distance, ball.angle);
+      // HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500);
+      // for (uint8_t i = 0; i < 20; i++)
+      // {
+      //   sprintf(tx_buff, "%u", line_sensors[i]);
+      //   HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500);
+      // }
+      // sprintf(tx_buff, "\r\n\r\n", on_line_sensors);
+      // HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500);
+    }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
