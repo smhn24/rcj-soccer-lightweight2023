@@ -34,6 +34,7 @@
 #include "bno055.h"
 #include "tssp_helper.h"
 #include "line_sensor.h"
+#include "helpers.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,16 +55,16 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-volatile uint8_t tx_buff[100];
+volatile uint8_t tx_buff[100]; //? Data to send with uart
 volatile TSSP sensors[16];
 volatile BALL ball;
 volatile Robot robot;
 volatile uint16_t width_temp[16][AVERAGE_DATA_NUMBER] = {0};
-volatile uint16_t brake_time = 0;
-volatile uint8_t out_data[3] = {0};
-// volatile uint32_t out_digital = 0;
-volatile uint8_t on_line_sensors = 0;
-volatile bool line_sensors[20] = {0};
+volatile uint8_t on_line_sensors = 0; //? Number of sensors sees the line
+volatile bool line_sensors[20] = {0}; //? NJL sensors status that sees the line(1) or not(0)
+// volatile bool out_detect;             //? A flag to detect line(true) or not(false)
+// volatile out_direction_t out_direction;
+// volatile uint8_t out_edges[2];
 
 //* Tasks *//
 volatile uint8_t Task1ms = 0, Task5ms = 0, Task10ms = 0, Task50ms = 0;
@@ -121,42 +122,7 @@ int main(void)
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
-  //* PWM timers
-  HAL_TIM_Base_Start(&htim1);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); //? Motor 2
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2); //? Motor 3
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3); //? Motor 4
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4); //? Motor 1
-
-  //* Input Capture timers for TSSP sensors
-  HAL_TIM_Base_Start_IT(&htim2);
-  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1); //? TSSP7
-  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_2); //? TSSP8
-  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3); //? TSSP4
-  HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4); //? TSSP11
-
-  HAL_TIM_Base_Start_IT(&htim3);
-  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_1); //? TSSP6
-  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_2); //? TSSP9
-  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_3); //? TSSP3
-  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_4); //? TSSP12
-
-  HAL_TIM_Base_Start_IT(&htim5);
-  HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_1); //? TSSP5
-  HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_2); //? TSSP10
-
-  HAL_TIM_Base_Start_IT(&htim8);
-  HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_1); //? TSSP1
-  HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_2); //? TSSP14
-  HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_3); //? TSSP15
-  HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_4); //? TSSP0
-
-  HAL_TIM_Base_Start_IT(&htim12);
-  HAL_TIM_IC_Start_IT(&htim12, TIM_CHANNEL_1); //? TSSP2
-  HAL_TIM_IC_Start_IT(&htim12, TIM_CHANNEL_2); //? TSSP13
-
-  HAL_TIM_Base_Start_IT(&htim4); //? Start timer for checkout tssp pulses
-  HAL_TIM_Base_Start_IT(&htim7); //? Start timer for change tasks
+  start_timers();
 
   LL_mDelay(2000); //! Wait for BNO055 to be ready
   BNO055_Config();
@@ -180,7 +146,7 @@ int main(void)
     }
   }
 
-  // MOTORS_ENABLE();
+  MOTORS_ENABLE();
 
   Task1ms = 0;
   Task5ms = 0;
@@ -208,29 +174,12 @@ int main(void)
     {
       Task10ms = 0;
 
-      read_line_sensors(line_sensors, out_data);
-      on_line_sensors = 0;
-      for (uint8_t i = 0; i < 20; i++)
-      {
-        if (line_sensors[i])
-        {
-          on_line_sensors++;
-        }
-      }
+      detect_out(line_sensors);
     }
 
     if (Task50ms > 49)
     {
       Task50ms = 0;
-      // sprintf(tx_buff, "Angle: %d    Distance: %d    Ball angle: %d\r\n", robot.angle, ball.distance, ball.angle);
-      // HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500);
-      // for (uint8_t i = 0; i < 20; i++)
-      // {
-      //   sprintf(tx_buff, "%u", line_sensors[i]);
-      //   HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500);
-      // }
-      // sprintf(tx_buff, "\r\n\r\n", on_line_sensors);
-      // HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500);
     }
 
     /* USER CODE END WHILE */
