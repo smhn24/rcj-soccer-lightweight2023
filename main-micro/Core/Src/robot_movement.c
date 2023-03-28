@@ -9,6 +9,7 @@
 
 extern Robot robot;
 extern uint16_t brake_time;
+extern bool is_braking;
 
 //? Lookup table for omni-directional movement with 5 degrees resolution
 const int motor_speed_table[72][2] = {
@@ -228,12 +229,20 @@ inline void get_ball(BALL *ball)
     }
 }
 
-inline void robot_brake(int angle, float percent_speed, uint16_t time)
+inline void robot_brake(int angle, float percent_speed, uint16_t time_ms)
 {
-    brake_time = 0;
-    while (brake_time < time)
+    if (brake_time >= time_ms)
     {
+        is_braking = false;
+        brake_time = 0;
+    }
+    else
+    {
+        angle -= 180;
+        if (angle < 0)
+        {
+            angle += 360;
+        }
         robot_move(angle, percent_speed);
-        LL_mDelay(2);
     }
 }

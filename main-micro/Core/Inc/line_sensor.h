@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "i2c.h"
+// #include "usart.h"
 
 #define LINE_SENSORS_ADDRESS 0xA0
 
@@ -17,6 +18,6 @@ typedef enum __attribute__((packed)) _out_direction
 
 void read_line_sensors(bool *line_sensors);
 uint8_t on_line_sensors_number(bool *line_sensors);
-void detect_out(bool *line_sensors);
+// void detect_out(bool *line_sensors);
 
 #endif

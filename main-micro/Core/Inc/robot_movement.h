@@ -44,6 +44,6 @@ void get_ball(BALL *ball);
 void set_motors(int motor_1, int motor_2, int motor_3, int motor_4);
 void robot_move(int angle, float percent_speed);
 int pid_calculator(int error);
-// void robot_brake(int angle, float percent_speed, uint16_t time);
+void robot_brake(int angle, float percent_speed, uint16_t time_ms);
 
 #endif

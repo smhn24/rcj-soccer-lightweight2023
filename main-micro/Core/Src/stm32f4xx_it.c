@@ -44,8 +44,7 @@
 /* USER CODE BEGIN PV */
 extern TSSP sensors[16];
 extern uint16_t width_temp[16][AVERAGE_DATA_NUMBER];
-// extern uint32_t ms_counter;
-// extern uint16_t brake_time;
+extern uint16_t brake_time;
 extern volatile uint8_t Task1ms, Task5ms, Task10ms, Task50ms;
 
 /* USER CODE END PV */
@@ -598,8 +597,7 @@ void TIM5_IRQHandler(void)
 void TIM7_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM7_IRQn 0 */
-  // ms_counter++;
-  // brake_time++;
+  brake_time++;
 
   if (Task10ms < 100)
   {
