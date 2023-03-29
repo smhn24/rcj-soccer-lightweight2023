@@ -34,6 +34,7 @@ unsigned int8 njl_value = 0;
 unsigned int8 ledc = 0;
 const unsigned int8 njl_channels[20] = {13, 11, 9, 8, 10, 12, 26, 25, 24, 19, 17, 23, 22, 21, 20, 4, 3, 2, 1, 0};
 int1 callibration_done = 0;
+int counter = 0;
 
 
 void check_sensors();
@@ -109,6 +110,7 @@ void main()
 //!      check_sensors();
 //!      printf("Sensor %u: %u\r\n", counter, njl_values[counter]);
       
+//!      r_high();  //! Debug
       
       if (callibrate_key() && !callibration_done) // callibration
       {
@@ -155,8 +157,18 @@ void main()
 
          callibration_done = 1;
       }
+      
 
       check_sensors();
+      
+      if (counter > 1)
+      {
+         b_high();
+      }
+      else
+      {
+         b_low();
+      }
 //!      uint32_to_uint8(digital_value, data);
       convert32to24(digital_value, &data[0], &data[1], &data[2]);
    }
@@ -164,6 +176,7 @@ void main()
 
 void check_sensors()
 {
+   counter = 0;
    for (unsigned int8 i = 0; i < 20; i++)
    {
       set_adc_channel(njl_channels[i]);
@@ -174,6 +187,7 @@ void check_sensors()
       {
          bit_set(digital_value, i);
 //!         printf("%u\r\n", i);
+         counter++;
       }
       else
       {

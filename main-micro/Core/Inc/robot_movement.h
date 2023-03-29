@@ -5,15 +5,16 @@
 #include "tssp_helper.h"
 #include "helpers.h"
 #include "bno055.h"
+#include "line_sensor.h"
 
 #define MAX_VELOCITY 2800
-// #define GET_BALL_DISTANCE 12
 #define GET_BALL_DISTANCE 10
 #define LEFT_TOLERANCE_ANGLE 335
 #define RIGHT_TOLERANCE_ANGLE 25
 #define MAX_DISTANCE 29.1 //? 11 + maxmimum distance
 #define MAX_SPEED_PERCENT 0.8
 #define MAX_GET_BALL_SPEED_PERCENT 0.5
+#define BRAKE_PERCENT_SPEED 0.6
 
 #define KP 17
 #define KD 0
@@ -39,6 +40,14 @@ typedef struct
     volatile float percent_speed;
     volatile int angle;
     volatile int move_angle;
+    volatile int out_angle;
+    volatile uint8_t out_edges[2]; //? NJL edges for out angle
+    volatile uint8_t on_line_sensors;
+    volatile uint8_t first_out_sensor;
+    volatile uint8_t out_error;
+    volatile direction_t out_direction;
+    volatile bool out_detect;
+    volatile bool is_braking;
 } Robot;
 
 void get_ball(BALL *ball);

@@ -17,6 +17,15 @@
 
 #define PRINT_BUFFER() HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500)
 
+typedef enum __attribute__((packed)) _direction
+{
+    LEFT = 0,
+    RIGHT = 1,
+    FRONT = 2,
+    BACK = 3,
+    NOTHING = 4
+} direction_t;
+
 void start_timers();
 
 #endif

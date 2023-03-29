@@ -48,6 +48,23 @@ inline void measure_ball_data(TSSP sensors[16], BALL *ball)
         }
     }
 
+    if (ball->max_sensor < 3 || ball->max_sensor > 13)
+    {
+        ball->direction = RIGHT;
+    }
+    else if (ball->max_sensor >= 3 && ball->max_sensor < 6)
+    {
+        ball->direction = FRONT;
+    }
+    else if (ball->max_sensor >= 6 && ball->max_sensor <= 10)
+    {
+        ball->direction = LEFT;
+    }
+    else
+    {
+        ball->direction = BACK;
+    }
+
     ball->angle = (int)(atan2(ball->sigma_y, ball->sigma_x) * RADIAN_TO_DEGREE); // Get the angle & convert it from radian to degree
     ball->angle -= 90;
     if (ball->angle < 0)

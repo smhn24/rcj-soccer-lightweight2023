@@ -60,15 +60,7 @@ volatile TSSP sensors[16];
 volatile BALL ball;
 volatile Robot robot;
 volatile uint16_t width_temp[16][AVERAGE_DATA_NUMBER] = {0}; //? This array use for avarage filter from pulses
-volatile uint8_t on_line_sensors = 0;                        //? Number of sensors sees the line
 volatile bool line_sensors[20] = {0};                        //? NJL sensors status that sees the line(1) or not(0)
-volatile bool out_detect;                                    //? A flag to detect line(true) or not(false)
-volatile out_direction_t out_direction;                      //? Enum to show out direction
-volatile int out_angle;
-volatile uint8_t first_out_sensor = 0;
-volatile uint8_t out_edges[2];
-volatile uint8_t out_error = 0;
-volatile bool is_braking = false;
 
 //* Tasks *//
 volatile uint8_t Task1ms = 0, Task5ms = 0, Task10ms = 0, Task50ms = 0;
@@ -150,7 +142,7 @@ int main(void)
     }
   }
 
-  // MOTORS_ENABLE();
+  MOTORS_ENABLE();
 
   // Task1ms = 0;
   // Task5ms = 0;
@@ -159,100 +151,108 @@ int main(void)
 
   while (1)
   {
-    robot.angle = BNO055_read();
+    // robot.angle = BNO055_read();
     measure_ball_data(sensors, &ball);
 
-    if (!out_detect && !is_braking)
+    if (!robot.out_detect && !robot.is_braking)
     {
       get_ball(&ball);
     }
 
-    if (!is_braking)
+    if (!robot.is_braking)
     {
       robot_move(robot.move_angle, robot.percent_speed);
     }
     else
     {
-      robot_brake(out_angle, 0.6, 2);
+      robot_brake(robot.move_angle, BRAKE_PERCENT_SPEED, 2);
     }
 
     read_line_sensors(line_sensors); //? Update line_sensors array
-    on_line_sensors = on_line_sensors_number(line_sensors);
+    robot.on_line_sensors = on_line_sensors_number(line_sensors);
 
-    if (on_line_sensors != 0 && !out_detect) //? At least one sensor detected line for the first time
+    if (robot.on_line_sensors != 0 && !robot.out_detect) //? At least one sensor detected line for the first time
     {
       for (uint8_t i = 0; i < 20; i++)
       {
         if (line_sensors[i])
         {
-          first_out_sensor = i;
+          robot.first_out_sensor = i;
           if (i > 8 && i < 14) //? Left
           {
-            out_direction = left;
+            robot.out_direction = LEFT;
           }
           else if (i >= 14 && i <= 18) //? Backward
           {
-            out_direction = backward;
+            robot.out_direction = BACK;
           }
           else if (i > 18 || i < 4) //? Right
           {
-            out_direction = right;
+            robot.out_direction = RIGHT;
           }
           else if (i >= 4 && i <= 8) //? Forward
           {
-            out_direction = forward;
+            robot.out_direction = FRONT;
           }
-          out_detect = true;
+          robot.out_detect = true;
           break;
         }
       }
-
-      is_braking = true;
+      // robot.is_braking = true;
     }
-    else if (on_line_sensors != 0 && out_detect)
+    else if (robot.on_line_sensors != 0 && robot.out_detect)
     {
-      get_edges(line_sensors, out_direction, out_edges);
-      out_angle = (out_edges[0] + out_edges[1]) / 2;
-      out_angle *= 18;
-      if (out_direction == right)
+      get_edges(line_sensors, robot.out_direction, robot.out_edges);
+      robot.out_angle = (robot.out_edges[0] + robot.out_edges[1]) / 2;
+      robot.out_angle *= 18;
+      // robot.out_angle -= 18;
+      if (robot.out_direction == RIGHT)
       {
-        out_angle = fabs(out_angle - 180);
+        robot.out_angle = fabs(robot.out_angle - 180);
       }
 
       //? Convert grading system
-      out_angle -= 90;
-      if (out_angle < 0)
-        out_angle += 360;
-      out_angle *= -1;
-      out_angle += 360;
+      robot.out_angle -= 90;
+      if (robot.out_angle < 0)
+        robot.out_angle += 360;
+      robot.out_angle *= -1;
+      robot.out_angle += 360;
 
-      out_error = out_direction != right ? fabs(out_edges[0] - out_edges[1]) : fabs(out_edges[0] - (out_edges[1] + 20));
+      robot.out_error = robot.out_direction != RIGHT ? fabs(robot.out_edges[0] - robot.out_edges[1]) : fabs(robot.out_edges[0] - (robot.out_edges[1] + 20));
 
-      out_angle -= 180;
-      if (out_angle < 0)
+      robot.move_angle = robot.out_angle - 180;
+      if (robot.move_angle < 0)
       {
-        out_angle += 360;
+        robot.move_angle += 360;
       }
-
-      robot.move_angle = out_angle;
-      robot.percent_speed = LINE_KP * out_error;
-
-      // sprintf(tx_buff, "%d    %d    Error: %d\r\n", out_edges[0], out_edges[1], out_error);
-      // PRINT_BUFFER();
+      robot.percent_speed = robot.out_error > 2 ? LINE_KP * robot.out_error : 0;
     }
-    else if (on_line_sensors < 2 && out_detect) //? No sensor sees the line
+    else if (robot.on_line_sensors < 2 && robot.out_detect) //? No sensor sees the line
     {
-      is_braking = true;
-      out_detect = false;
-      out_direction = not_out;
+      if (robot.out_direction == ball.direction) //! Needs to check for vertical and horizontal directions
+      {
+      }
+      else
+      {
+      }
+      // robot.is_braking = true;
+      robot.out_detect = false;
+      robot.out_direction = NOTHING;
+      robot.out_error = 0;
     }
-    // else if (on_line_sensors == 0) //? No sensor sees the line
-    // {
-    //   out_detect = false;
-    //   out_direction = not_out;
-    // }
-    // sprintf(tx_buff, "Max sensor: %d\r\n", ball.max_sensor);
+
+    if (robot.on_line_sensors > 1)
+    {
+      TurnOnLED();
+    }
+    else
+    {
+      TurnOffLED();
+    }
+
+    // sprintf(tx_buff, "out angle: %d\r\n", robot.out_angle);
     // PRINT_BUFFER();
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
