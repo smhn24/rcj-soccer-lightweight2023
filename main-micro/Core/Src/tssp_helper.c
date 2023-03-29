@@ -61,5 +61,5 @@ inline void measure_ball_data(TSSP sensors[16], BALL *ball)
     ball->sigma_y = 0;
 
     ball->max_value = 0;
-    ball->max_sensor = 0;
+    // ball->max_sensor = 0;
 }

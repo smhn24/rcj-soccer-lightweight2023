@@ -8,7 +8,6 @@
 */
 
 extern Robot robot;
-extern uint16_t brake_time;
 extern bool is_braking;
 
 //? Lookup table for omni-directional movement with 5 degrees resolution
@@ -173,7 +172,8 @@ void robot_move(int angle, float percent_speed)
     int m1 = 0, m2 = 0, m3 = 0, m4 = 0; //? motors value
     int pid_value;
 
-    pid_value = pid_calculator(robot.angle);
+    // pid_value = pid_calculator(robot.angle);
+    pid_value = pid_calculator(BNO055_read());
 
     //* Add pid value to omni-directional
     m1 = -pid_value;
@@ -229,20 +229,24 @@ inline void get_ball(BALL *ball)
     }
 }
 
-inline void robot_brake(int angle, float percent_speed, uint16_t time_ms)
+void robot_brake(int angle, float percent_speed, uint16_t time)
 {
-    if (brake_time >= time_ms)
+    static uint16_t start_time = 0;
+    angle -= 180;
+    if (angle < 0)
     {
+        angle += 360;
+    }
+    if (start_time > time)
+    {
+        start_time = 0;
         is_braking = false;
-        brake_time = 0;
     }
     else
     {
-        angle -= 180;
-        if (angle < 0)
-        {
-            angle += 360;
-        }
+        // robot.move_angle = angle;
+        // robot.percent_speed = percent_speed;
         robot_move(angle, percent_speed);
+        start_time++;
     }
 }

@@ -37,5 +37,5 @@ void start_timers()
     HAL_TIM_IC_Start_IT(&htim12, TIM_CHANNEL_2); //? TSSP13
 
     HAL_TIM_Base_Start_IT(&htim4); //? Start timer for checkout tssp pulses
-    HAL_TIM_Base_Start_IT(&htim7); //? Start timer for change tasks
+    // HAL_TIM_Base_Start_IT(&htim7); //? Timer for timing of tasks, brake,... with 1ms overflow and 1us counter
 }

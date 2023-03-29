@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "tim.h"
+#include "usart.h"
 
 #define DEGREE_TO_RADIAN 0.01744
 #define RADIAN_TO_DEGREE 57.2957

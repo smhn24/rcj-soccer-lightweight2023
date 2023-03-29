@@ -36,148 +36,96 @@ uint8_t on_line_sensors_number(bool *line_sensors)
     return on_line_sensors;
 }
 
-// void detect_out(bool *line_sensors)
-// {
-//     uint8_t on_line_sensors;
-//     uint8_t out_edges[2];
-//     static out_direction_t out_direction;
-//     static bool out_detect = false;
+void get_edges(bool *line_sensors, out_direction_t out_direction, uint8_t *out_edges)
+{
+    switch (out_direction)
+    {
+    case left:
+        for (uint8_t i = 16; i >= 11; i--)
+        {
+            if (line_sensors[i])
+            {
+                out_edges[0] = i;
+                break;
+            }
+        }
+        for (uint8_t i = 6; i <= 11; i++)
+        {
+            if (line_sensors[i])
+            {
+                out_edges[1] = i;
+                break;
+            }
+        }
+        break;
+    case right:
+        for (uint8_t i = 16; i <= 20; i++)
+        {
+            if (i == 20 && line_sensors[0])
+            {
+                out_edges[0] = 20;
+                break;
+            }
+            else if (line_sensors[i])
+            {
+                out_edges[0] = i;
+                break;
+            }
+        }
+        for (uint8_t i = 6; i >= 1; i--)
+        {
+            if (line_sensors[i])
+            {
+                out_edges[1] = i;
+                break;
+            }
+        }
+        break;
+    case forward:
+        for (uint8_t i = 1; i <= 6; i++)
+        {
+            if (line_sensors[i])
+            {
+                out_edges[0] = i;
+                break;
+            }
+        }
+        for (uint8_t i = 11; i > 6; i--)
+        {
+            if (line_sensors[i])
+            {
+                out_edges[1] = i;
+                break;
+            }
+        }
+        break;
+    case backward:
+        for (uint8_t i = 10; i <= 16; i++)
+        {
+            if (line_sensors[i])
+            {
+                out_edges[0] = i;
+                break;
+            }
+        }
 
-//     read_line_sensors(line_sensors); //? Update line_sensors array
-//     on_line_sensors = on_line_sensors_number(line_sensors);
+        for (uint8_t i = 16; i < 21; i++)
+        {
+            if (i == 20 && line_sensors[0])
+            {
+                out_edges[1] = 20;
+                break;
+            }
 
-//     if (on_line_sensors != 0 && !out_detect) //? At least one sensor detected line for the first time
-//     {
-//         for (uint8_t i = 0; i < 20; i++)
-//         {
-//             if (line_sensors[i])
-//             {
-//                 if (i > 8 && i < 14) //? Left
-//                 {
-//                     out_direction = left;
-//                     sprintf(tx_buff, "Left: %d\r\n", i);
-//                     HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500);
-//                 }
-//                 else if (i >= 14 && i <= 18) //? Backward
-//                 {
-//                     out_direction = backward;
-//                     sprintf(tx_buff, "Back: %d\r\n", i);
-//                     HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500);
-//                 }
-//                 else if (i > 18 || i < 4) //? Right
-//                 {
-//                     out_direction = right;
-//                     sprintf(tx_buff, "Right: %d\r\n", i);
-//                     HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500);
-//                 }
-//                 else if (i >= 4 && i <= 8) //? Forward
-//                 {
-//                     out_direction = forward;
-//                     sprintf(tx_buff, "Forward: %d\r\n", i);
-//                     HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500);
-//                 }
-//                 out_detect = true;
-//                 break;
-//             }
-//         }
-//     }
-//     else if (on_line_sensors != 0 && out_detect)
-//     {
-//         switch (out_direction)
-//         {
-//         case left:
-//             for (uint8_t i = 16; i >= 11; i--)
-//             {
-//                 if (line_sensors[i])
-//                 {
-//                     out_edges[0] = i;
-//                     break;
-//                 }
-//             }
-//             for (uint8_t i = 6; i <= 11; i++)
-//             {
-//                 if (line_sensors[i])
-//                 {
-//                     out_edges[1] = i;
-//                     break;
-//                 }
-//             }
-//             break;
-//         case right:
-//             for (uint8_t i = 16; i <= 20; i++)
-//             {
-//                 if (i == 20 && line_sensors[0])
-//                 {
-//                     out_edges[0] = 0;
-//                     break;
-//                 }
-//                 else if (line_sensors[i])
-//                 {
-//                     out_edges[0] = i;
-//                     break;
-//                 }
-//             }
-//             for (uint8_t i = 6; i >= 1; i--)
-//             {
-//                 if (line_sensors[i])
-//                 {
-//                     out_edges[1] = i;
-//                     break;
-//                 }
-//             }
-//             break;
-//         case forward:
-//             for (uint8_t i = 1; i <= 6; i++)
-//             {
-//                 if (line_sensors[i])
-//                 {
-//                     out_edges[0] = i;
-//                     break;
-//                 }
-//             }
-//             for (uint8_t i = 11; i > 6; i--)
-//             {
-//                 if (line_sensors[i])
-//                 {
-//                     out_edges[1] = i;
-//                     break;
-//                 }
-//             }
-//             break;
-//         case backward:
-//             for (uint8_t i = 11; i < 16; i++)
-//             {
-//                 if (line_sensors[i])
-//                 {
-//                     out_edges[0] = i;
-//                     break;
-//                 }
-//             }
+            else if (line_sensors[i])
+            {
+                out_edges[1] = i;
+                break;
+            }
+        }
+        break;
 
-//             for (uint8_t i = 16; i < 21; i++)
-//             {
-
-//                 if (i == 20 && line_sensors[0])
-//                 {
-//                     out_edges[1] = 0;
-//                     break;
-//                 }
-
-//                 else if (line_sensors[i])
-//                 {
-//                     out_edges[1] = i;
-//                     break;
-//                 }
-//             }
-//             break;
-
-//         default:
-//             break;
-//         }
-//     }
-//     else if (on_line_sensors == 0) //? No sensor sees the line
-//     {
-//         out_detect = false;
-//         out_direction = not_out;
-//     }
-// }
+    default:
+        break;
+    }
+}

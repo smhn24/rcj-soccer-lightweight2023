@@ -10,6 +10,14 @@
 #define AVERAGE_DATA_NUMBER 20
 #define DISTANCE_OFFSET 100
 
+typedef enum __attribute__((packed)) _ball_direction
+{
+    LEFT = 0,
+    RIGHT = 1,
+    FRONT = 2,
+    BACK = 3
+} ball_direction_t;
+
 typedef struct
 {
     volatile float Ax;                //? Decomposing the sensor width with x-axis
@@ -24,14 +32,15 @@ typedef struct
 
 typedef struct
 {
-    volatile float sigma_x;         //? Sum of the vector sizes on x-axis
-    volatile float sigma_y;         //? Sum of the vector sizes on y-axis
-    volatile int distance;          //? Distance between the robot and the ball
-    volatile int angle;             //? Angle between the robot and the ball
-    volatile int get_ball_offset;   //? Offset of Get ball
-    volatile int max_value;         //? Value of the nearest robot sensor to the ball
-    volatile uint8_t max_sensor;    //? Number of the nearest sensor to the ball
-    volatile uint8_t sensor_nember; //? Number of sensors that see the ball
+    volatile float sigma_x;                   //? Sum of the vector sizes on x-axis
+    volatile float sigma_y;                   //? Sum of the vector sizes on y-axis
+    volatile int distance;                    //? Distance between the robot and the ball
+    volatile int angle;                       //? Angle between the robot and the ball
+    volatile int get_ball_offset;             //? Offset of Get ball
+    volatile int max_value;                   //? Value of the nearest robot sensor to the ball
+    volatile uint8_t max_sensor;              //? Number of the nearest sensor to the ball
+    volatile uint8_t sensor_nember;           //? Number of sensors that see the ball
+    volatile ball_direction_t ball_direction; //? Direction of the ball according to the robot
 } BALL;
 
 void update_sensor(uint8_t sensor_index, TSSP *sensor);

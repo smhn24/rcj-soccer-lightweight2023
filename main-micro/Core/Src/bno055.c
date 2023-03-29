@@ -20,7 +20,6 @@ void BNO055_Config(void)
 
 int16_t BNO055_read(void)
 {
-    // TurnOnLED(); //! Debug
     uint8_t angleData[2];
     int16_t angle;
 
@@ -30,6 +29,5 @@ int16_t BNO055_read(void)
     HAL_I2C_Master_Receive(&hI2C, BNO055_ADDRESS, angleData, 2, 100);
 
     angle = ((int16_t)(angleData[0] | angleData[1] << 8) / 16);
-    // TurnOffLED(); //! Debug
     return angle;
 }
