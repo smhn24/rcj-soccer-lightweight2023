@@ -13,8 +13,10 @@
 #define RIGHT_TOLERANCE_ANGLE 25
 #define MAX_DISTANCE 29.1 //? 11 + maxmimum distance
 #define MAX_SPEED_PERCENT 0.8
+// #define MAX_SPEED_PERCENT 0.65
 #define MAX_GET_BALL_SPEED_PERCENT 0.5
 #define BRAKE_PERCENT_SPEED 0.6
+// #define BRAKE_PERCENT_SPEED 0.85
 
 #define KP 17
 #define KD 0
@@ -46,7 +48,8 @@ typedef struct
     volatile uint8_t first_out_sensor;
     volatile uint8_t out_error;
     volatile direction_t out_direction;
-    volatile bool out_detect;
+    volatile bool out_detect; //? Robot detects out
+    volatile bool in_out;     //? Robot is in the out
     volatile bool is_braking;
 } Robot;
 

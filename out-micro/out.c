@@ -12,13 +12,15 @@
 #define r_low() output_low(PIN_c0)
 #define f_high() output_high(PIN_e1)
 #define f_low() output_low(PIN_e1)
+#define i2c_busy() output_low(pin_C2)   // D2
+#define i2c_ready() output_high(pin_C2)
 
 #define b_toggle() output_toggle(PIN_c1) // 35
 #define l_toggle() output_toggle(PIN_a4) // 23
 #define r_toggle() output_toggle(PIN_c0) // 32
 #define f_toggle() output_toggle(PIN_e1) // 26
 
-#define I2C_INT pin_C2 // D2
+//!#define I2C_INT pin_C2 // D2
 
 #define callibrate_key() !input(pin_e2)
 
@@ -34,7 +36,7 @@ unsigned int8 njl_value = 0;
 unsigned int8 ledc = 0;
 const unsigned int8 njl_channels[20] = {13, 11, 9, 8, 10, 12, 26, 25, 24, 19, 17, 23, 22, 21, 20, 4, 3, 2, 1, 0};
 int1 callibration_done = 0;
-int counter = 0;
+int counter, counter_key = 0;
 
 
 void check_sensors();
@@ -53,12 +55,21 @@ void ssp_interrupt()
    if (state >= 0x80) // Master is requesting data from slave
    {
       i2c_write(data[state - 0x80]);
+      
+//!      if (state == 81)
+//!      {
+//!         data[0] = 0;
+//!         data[1] = 0;
+//!         data[0] = 0;
+//!         
+//!         i2c_busy();
+//!      }
    }
 }
 
 void main()
 {
-   output_low(I2C_INT);
+   i2c_busy();
    set_analog_pins(PIN_A0, PIN_A1, PIN_A2, PIN_A3, PIN_A5, PIN_B0, PIN_B1, PIN_B2, PIN_B3, PIN_B4, PIN_B5, PIN_C5, PIN_C7, PIN_D0, PIN_D1, PIN_D2, PIN_D3, PIN_D4, PIN_D5, PIN_D6);
    setup_adc(ADC_CLOCK_DIV_64 | ADC_TAD_MUL_0);
    enable_interrupts(global);
@@ -101,16 +112,19 @@ void main()
    {
 //!      if (callibrate_key()) // callibration
 //!      {
-//!         counter++;
-//!         counter %= 20;
+//!         counter_key++;
+//!         counter_key %= 20;
 //!         while (callibrate_key())
 //!         {
 //!         }
 //!      }
 //!      check_sensors();
-//!      printf("Sensor %u: %u\r\n", counter, njl_values[counter]);
+//!      printf("Sensor %u: %u\r\n", counter_key, njl_values[counter_key]);
+//!      printf("MIN %u: %u    MAX %u: %u\r\n", counter_key, min_njl[counter_key], counter_key, max_njl[counter_key]);
       
-//!      r_high();  //! Debug
+//!      r_toggle();
+//!      delay_ms(5);
+      
       
       if (callibrate_key() && !callibration_done) // callibration
       {
@@ -146,7 +160,9 @@ void main()
          }
          for (int i = 0; i < 20; i++)
          {
-            threshold_values[i] = max_njl[i] + 30;
+            threshold_values[i] = max_njl[i] - 40;
+//!            threshold_values[i] = (float)max_njl[i] * 0.65 + (float)min_njl[i] * 0.35;
+//!            threshold_values[i] = (float)max_njl[i] * 0.5 + (float)min_njl[i] * 0.5;
             write_eeprom(i, threshold_values[i]);
             delay_us(10);
          }
@@ -171,16 +187,20 @@ void main()
       }
 //!      uint32_to_uint8(digital_value, data);
       convert32to24(digital_value, &data[0], &data[1], &data[2]);
+//!      printf("%d\r\n", njl_values[0]);
+//!      i2c_ready();
    }
 }
 
 void check_sensors()
 {
    counter = 0;
+   digital_value = 0;
    for (unsigned int8 i = 0; i < 20; i++)
    {
       set_adc_channel(njl_channels[i]);
-      delay_us(10);
+//!      delay_us(10);
+      delay_us(15);
       njl_values[i] = read_adc();
 
       if (njl_values[i] > threshold_values[i])

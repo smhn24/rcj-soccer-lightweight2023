@@ -243,8 +243,6 @@ void robot_brake(int angle, float percent_speed, uint16_t time)
     }
     else
     {
-        // robot.move_angle = angle;
-        // robot.percent_speed = percent_speed;
         robot_move(angle, percent_speed);
         start_time++;
     }

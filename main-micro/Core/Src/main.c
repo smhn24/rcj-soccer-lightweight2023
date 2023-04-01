@@ -151,12 +151,19 @@ int main(void)
 
   while (1)
   {
-    // robot.angle = BNO055_read();
     measure_ball_data(sensors, &ball);
-
-    if (!robot.out_detect && !robot.is_braking)
+    if (!robot.is_braking)
     {
-      get_ball(&ball);
+      if (robot.out_detect && fabs(robot.out_angle - ball.angle) < 45) //! Needs to change with distance of the ball
+      {
+        robot.move_angle = 0;
+        robot.percent_speed = 0;
+      }
+      else
+      {
+        get_ball(&ball);
+        robot.out_detect = false;
+      }
     }
 
     if (!robot.is_braking)
@@ -165,82 +172,53 @@ int main(void)
     }
     else
     {
-      robot_brake(robot.move_angle, BRAKE_PERCENT_SPEED, 2);
+      robot_brake(robot.move_angle, BRAKE_PERCENT_SPEED, 10);
+      // robot_brake(robot.move_angle, BRAKE_PERCENT_SPEED, 200);
     }
 
     read_line_sensors(line_sensors); //? Update line_sensors array
     robot.on_line_sensors = on_line_sensors_number(line_sensors);
-
-    if (robot.on_line_sensors != 0 && !robot.out_detect) //? At least one sensor detected line for the first time
+    if ((robot.on_line_sensors != 0 && robot.on_line_sensors < 10) && !robot.in_out && !robot.out_detect) //? At least one sensor detected line for the first time
     {
-      for (uint8_t i = 0; i < 20; i++)
-      {
-        if (line_sensors[i])
-        {
-          robot.first_out_sensor = i;
-          if (i > 8 && i < 14) //? Left
-          {
-            robot.out_direction = LEFT;
-          }
-          else if (i >= 14 && i <= 18) //? Backward
-          {
-            robot.out_direction = BACK;
-          }
-          else if (i > 18 || i < 4) //? Right
-          {
-            robot.out_direction = RIGHT;
-          }
-          else if (i >= 4 && i <= 8) //? Forward
-          {
-            robot.out_direction = FRONT;
-          }
-          robot.out_detect = true;
-          break;
-        }
-      }
-      // robot.is_braking = true;
+      robot.in_out = true;
+      get_out_direction(line_sensors);
     }
-    else if (robot.on_line_sensors != 0 && robot.out_detect)
+    else if (robot.on_line_sensors > 1 && robot.in_out)
     {
       get_edges(line_sensors, robot.out_direction, robot.out_edges);
-      robot.out_angle = (robot.out_edges[0] + robot.out_edges[1]) / 2;
-      robot.out_angle *= 18;
-      // robot.out_angle -= 18;
-      if (robot.out_direction == RIGHT)
-      {
-        robot.out_angle = fabs(robot.out_angle - 180);
-      }
+      get_out_angle();
+      get_out_error();
 
-      //? Convert grading system
-      robot.out_angle -= 90;
-      if (robot.out_angle < 0)
-        robot.out_angle += 360;
-      robot.out_angle *= -1;
-      robot.out_angle += 360;
-
-      robot.out_error = robot.out_direction != RIGHT ? fabs(robot.out_edges[0] - robot.out_edges[1]) : fabs(robot.out_edges[0] - (robot.out_edges[1] + 20));
-
+      //? Back inside
       robot.move_angle = robot.out_angle - 180;
       if (robot.move_angle < 0)
       {
         robot.move_angle += 360;
       }
-      robot.percent_speed = robot.out_error > 2 ? LINE_KP * robot.out_error : 0;
-    }
-    else if (robot.on_line_sensors < 2 && robot.out_detect) //? No sensor sees the line
-    {
-      if (robot.out_direction == ball.direction) //! Needs to check for vertical and horizontal directions
+      // robot.percent_speed = LINE_KP * robot.out_error;
+      // robot.percent_speed = robot.out_error > 3 ? LINE_KP * robot.out_error : 0;
+      if (robot.out_error > 3)
       {
+        robot.percent_speed = LINE_KP * robot.out_error;
       }
       else
       {
+        robot.out_error = 0;
+        robot.in_out = false;
+        robot.out_detect = true;
       }
-      // robot.is_braking = true;
-      robot.out_detect = false;
-      robot.out_direction = NOTHING;
+
+      // robot.percent_speed = LINE_KP * robot.out_error;
+    }
+    else if (robot.on_line_sensors < 3 && robot.in_out && !robot.out_detect) //? No sensor sees the line
+    {
+      robot.out_detect = true;
+      robot.in_out = false;
+      robot.is_braking = true;
       robot.out_error = 0;
     }
 
+    //! Debug
     if (robot.on_line_sensors > 1)
     {
       TurnOnLED();
@@ -250,6 +228,7 @@ int main(void)
       TurnOffLED();
     }
 
+    //! Needs to check for out angle offset
     // sprintf(tx_buff, "out angle: %d\r\n", robot.out_angle);
     // PRINT_BUFFER();
 
