@@ -142,17 +142,22 @@ int main(void)
     }
   }
 
-  MOTORS_ENABLE();
+  // MOTORS_ENABLE();
 
   // Task1ms = 0;
   // Task5ms = 0;
   // Task10ms = 0;
   // Task50ms = 0;
 
+  // while (1)
+  // {
+  //   set_motors(-1000, -1000, -1000, -1000);
+  // }
+
   while (1)
   {
     measure_ball_data(sensors, &ball);
-    if (!robot.is_braking)
+    if (!robot.is_braking && !robot.in_out) //! Needs check
     {
       if (robot.out_detect && fabs(robot.out_angle - ball.angle) < 45) //! Needs to change with distance of the ball
       {
@@ -161,8 +166,8 @@ int main(void)
       }
       else
       {
-        get_ball(&ball);
         robot.out_detect = false;
+        get_ball(&ball);
       }
     }
 
@@ -176,50 +181,61 @@ int main(void)
       // robot_brake(robot.move_angle, BRAKE_PERCENT_SPEED, 200);
     }
 
+    //* Out code
     read_line_sensors(line_sensors); //? Update line_sensors array
     robot.on_line_sensors = on_line_sensors_number(line_sensors);
-    if ((robot.on_line_sensors != 0 && robot.on_line_sensors < 10) && !robot.in_out && !robot.out_detect) //? At least one sensor detected line for the first time
+
+    if ((robot.on_line_sensors > 0 && robot.on_line_sensors < 10) && !robot.line_detect) //? At least one sensor detected line for the first time
     {
-      robot.in_out = true;
+      robot.line_detect = true;
       get_out_direction(line_sensors);
     }
-    else if (robot.on_line_sensors > 1 && robot.in_out)
+    else if (robot.line_detect && robot.on_line_sensors > 1) //? At least 2 sensors see the line for gettting out error & out angle
     {
       get_edges(line_sensors, robot.out_direction, robot.out_edges);
       get_out_angle();
       get_out_error();
 
-      //? Back inside
-      robot.move_angle = robot.out_angle - 180;
-      if (robot.move_angle < 0)
-      {
-        robot.move_angle += 360;
-      }
       // robot.percent_speed = LINE_KP * robot.out_error;
       // robot.percent_speed = robot.out_error > 3 ? LINE_KP * robot.out_error : 0;
-      if (robot.out_error > 3)
+
+      if (robot.out_error > 5)
       {
+        robot.in_out = true;
+
+        //? Back inside
+        robot.move_angle = robot.out_angle - 180;
+        if (robot.move_angle < 0)
+        {
+          robot.move_angle += 360;
+        }
         robot.percent_speed = LINE_KP * robot.out_error;
       }
       else
       {
-        robot.out_error = 0;
+        robot.is_braking = robot.in_out ? true : false;
         robot.in_out = false;
+        robot.out_error = 0;
         robot.out_detect = true;
       }
 
       // robot.percent_speed = LINE_KP * robot.out_error;
     }
-    else if (robot.on_line_sensors < 3 && robot.in_out && !robot.out_detect) //? No sensor sees the line
+    else if (robot.line_detect && robot.on_line_sensors == 0)
+    {
+      robot.line_detect = false;
+      robot.out_direction = NOTHING;
+      robot.in_out = false;
+      robot.out_detect = true;
+    }
+    else if (robot.line_detect)
     {
       robot.out_detect = true;
       robot.in_out = false;
-      robot.is_braking = true;
-      robot.out_error = 0;
     }
 
     //! Debug
-    if (robot.on_line_sensors > 1)
+    if (on_line_sensors_number > 1)
     {
       TurnOnLED();
     }
@@ -229,7 +245,7 @@ int main(void)
     }
 
     //! Needs to check for out angle offset
-    // sprintf(tx_buff, "out angle: %d\r\n", robot.out_angle);
+    // sprintf(tx_buff, "online: %d    Error: %d\r\n", robot.on_line_sensors, robot.out_error);
     // PRINT_BUFFER();
 
     /* USER CODE END WHILE */

@@ -4,6 +4,13 @@
 void BNO055_Config(void)
 {
     uint8_t configData[2];
+
+    //? Use external crystal
+    configData[0] = 0x3F;
+    configData[1] = 0xC1;
+    HAL_I2C_Master_Transmit(&hi2c2, BNO055_ADDRESS, configData, 2, 100);
+    HAL_Delay(50);
+
     configData[0] = 0x3E;
     configData[1] = 0x00;
 

@@ -48,8 +48,9 @@ typedef struct
     volatile uint8_t first_out_sensor;
     volatile uint8_t out_error;
     volatile direction_t out_direction;
-    volatile bool out_detect; //? Robot detects out
-    volatile bool in_out;     //? Robot is in the out
+    volatile bool out_detect;  //? Robot detects out
+    volatile bool in_out;      //? Robot is in the out
+    volatile bool line_detect; //? Robot sees the line
     volatile bool is_braking;
 } Robot;
 
