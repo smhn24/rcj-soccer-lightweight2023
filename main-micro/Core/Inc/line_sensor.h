@@ -8,8 +8,8 @@
 #include "helpers.h"
 
 #define LINE_SENSORS_ADDRESS 0xA0
-// #define LINE_KP 0.07
-#define LINE_KP 0.055
+#define LINE_KP 0.075
+// #define LINE_KP 0.055
 // #define LINE_KP 0.1
 
 void read_line_sensors(bool *line_sensors);

@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "tssp_helper.h"
+#include "robot_movement.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,6 +43,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
+// extern volatile Robot robot;
 extern TSSP sensors[16];
 extern uint16_t width_temp[16][AVERAGE_DATA_NUMBER];
 extern volatile uint8_t Task1ms, Task5ms, Task10ms, Task50ms;
@@ -63,7 +65,6 @@ extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim5;
-extern TIM_HandleTypeDef htim7;
 extern TIM_HandleTypeDef htim8;
 extern TIM_HandleTypeDef htim12;
 /* USER CODE BEGIN EV */
@@ -588,38 +589,6 @@ void TIM5_IRQHandler(void)
   /* USER CODE BEGIN TIM5_IRQn 1 */
 
   /* USER CODE END TIM5_IRQn 1 */
-}
-
-/**
-  * @brief This function handles TIM7 global interrupt.
-  */
-void TIM7_IRQHandler(void)
-{
-  /* USER CODE BEGIN TIM7_IRQn 0 */
-  // brake_time++;
-
-  if (Task10ms < 100)
-  {
-    Task10ms++;
-  }
-  if (Task1ms < 1)
-  {
-    Task1ms++;
-  }
-  if (Task5ms < 100)
-  {
-    Task5ms++;
-  }
-  if (Task50ms < 100)
-  {
-    Task50ms++;
-  }
-
-  /* USER CODE END TIM7_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim7);
-  /* USER CODE BEGIN TIM7_IRQn 1 */
-
-  /* USER CODE END TIM7_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

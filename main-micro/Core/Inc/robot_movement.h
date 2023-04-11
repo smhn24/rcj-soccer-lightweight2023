@@ -1,13 +1,17 @@
 #ifndef ROBOT_MOVEMENT_H
 #define ROBOT_MOVEMENT_H
 
+#include <stdlib.h>
+
 #include "tim.h"
 #include "tssp_helper.h"
 #include "helpers.h"
 #include "bno055.h"
 #include "line_sensor.h"
 
-#define MAX_VELOCITY 2800
+// #define MAX_VELOCITY 2800
+#define MAX_VELOCITY 100
+#define MAX_PWM_VALUE 2800
 #define GET_BALL_DISTANCE 10
 #define LEFT_TOLERANCE_ANGLE 335
 #define RIGHT_TOLERANCE_ANGLE 25
@@ -18,7 +22,8 @@
 #define BRAKE_PERCENT_SPEED 0.6
 // #define BRAKE_PERCENT_SPEED 0.85
 
-#define KP 17
+// #define KP 17
+#define KP 0.6
 #define KD 0
 
 #define MOTORS_ENABLE() LL_GPIO_SetOutputPin(MOTORS_ENABLE_GPIO_Port, MOTORS_ENABLE_Pin)
@@ -59,5 +64,8 @@ void set_motors(int motor_1, int motor_2, int motor_3, int motor_4);
 void robot_move(int angle, float percent_speed);
 int pid_calculator(int error);
 void robot_brake(int angle, float percent_speed, uint16_t time);
+// void motors_enable();
+// void motors_disable();
+// uint16_t get_motor_value(int8_t percent_velocity);
 
 #endif

@@ -2,7 +2,7 @@ import math
 
 lookup = []
 
-MAX_VELOCITY = 2800.0
+MAX_VELOCITY = 100.0
 
 for i in range(0, 360, 5):
     angle = i + 45

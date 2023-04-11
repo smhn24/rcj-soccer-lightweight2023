@@ -165,7 +165,7 @@ void get_out_angle()
     // robot.out_angle -= 18; //! Needs to check the offset
     if (robot.out_direction == RIGHT)
     {
-        robot.out_angle = fabs(robot.out_angle - 180);
+        robot.out_angle = abs(robot.out_angle - 180);
     }
 
     //? Convert grading system
@@ -178,5 +178,5 @@ void get_out_angle()
 
 void get_out_error()
 {
-    robot.out_error = robot.out_direction != RIGHT ? fabs(robot.out_edges[0] - robot.out_edges[1]) : fabs(robot.out_edges[0] - (robot.out_edges[1] + 20));
+    robot.out_error = robot.out_direction != RIGHT ? abs(robot.out_edges[0] - robot.out_edges[1]) : abs(robot.out_edges[0] - (robot.out_edges[1] + 20));
 }
