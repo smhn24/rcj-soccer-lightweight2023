@@ -24,7 +24,8 @@
 // #define BRAKE_PERCENT_SPEED 0.85
 
 // #define KP 17
-#define KP 0.6
+#define KP 0.65
+// #define KD 6
 #define KD 0
 
 #define MOTORS_ENABLE() LL_GPIO_SetOutputPin(MOTORS_ENABLE_GPIO_Port, MOTORS_ENABLE_Pin)
@@ -47,6 +48,7 @@ typedef struct
 {
     volatile float percent_speed;
     volatile int angle;
+    volatile int offset_angle;
     volatile int move_angle;
     volatile int out_angle;
     volatile uint8_t out_edges[2]; //? NJL edges for out angle
@@ -65,8 +67,5 @@ void set_motors(int motor_1, int motor_2, int motor_3, int motor_4);
 void robot_move(int angle, float percent_speed);
 int pid_calculator(int error);
 void robot_brake(int angle, float percent_speed, uint16_t time);
-// void motors_enable();
-// void motors_disable();
-// uint16_t get_motor_value(int8_t percent_velocity);
 
 #endif

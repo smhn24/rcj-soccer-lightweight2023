@@ -90,5 +90,9 @@ int16_t BNO055_read(void)
     I2Cdev_readBytes(BNO055_ADDRESS, regAddr, 2, angleData, 100);
 
     angle = ((int16_t)(angleData[0] | angleData[1] << 8) / 16);
+    if (angle >= 360)
+    {
+        angle = 0;
+    }
     return angle;
 }

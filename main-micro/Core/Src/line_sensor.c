@@ -5,7 +5,7 @@ extern Robot robot;
 void read_line_sensors(bool *line_sensors)
 {
     uint8_t out_data[3];
-    HAL_I2C_Master_Receive(&hi2c2, LINE_SENSORS_ADDRESS, (uint8_t *)out_data, 3, 200);
+    HAL_I2C_Master_Receive(&hi2c2, LINE_SENSORS_ADDRESS, (uint8_t *)out_data, 3, 100);
     for (uint8_t i = 0; i < 8; i++)
     {
         line_sensors[i] = (out_data[2] & 0x01) == 1;

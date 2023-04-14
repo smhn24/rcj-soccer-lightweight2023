@@ -14,6 +14,7 @@
 
 #define TurnOnLED() LL_GPIO_SetOutputPin(LED_GPIO_Port, LED_Pin)
 #define TurnOffLED() LL_GPIO_ResetOutputPin(LED_GPIO_Port, LED_Pin)
+#define ToggleLED() LL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin)
 
 #define PRINT_BUFFER() HAL_UART_Transmit(&huart4, (uint8_t *)tx_buff, strlen(tx_buff), 500)
 

@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
 #include "i2c.h"
 #include "tim.h"
 #include "usart.h"
@@ -28,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "keys.h"
 #include "robot_movement.h"
@@ -57,14 +59,20 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-volatile uint8_t tx_buff[100];  //? Data to send with uart
-volatile uint8_t oled_buff[20]; //? Data to show in oled
+volatile uint8_t tx_buff[100]; //? Data to send with uart
+volatile uint8_t rx_dma_buff[50];
+// volatile uint8_t rx_buff[50];
+uint8_t index_counter = 0, comming_data;
+uint8_t bno_data[20] = {0};
+// uint8_t config_data[3] = {0xAA, 0x38, 0xE2};
+uint8_t config_data[3] = {0xAA, 0x58, 0xE2};
+uint8_t end_index;
+uint8_t oled_buff[20]; //? Data to show in oled
 volatile TSSP sensors[16];
 volatile BALL ball;
-volatile Robot robot;
-volatile uint16_t width_temp[16][AVERAGE_DATA_NUMBER] = {0}; //? This array use for avarage filter from pulses
-volatile bool line_sensors[20] = {0};                        //? NJL sensors status that sees the line(1) or not(0)
-
+Robot robot;
+uint16_t width_temp[16][AVERAGE_DATA_NUMBER] = {0}; //? This array use for avarage filter from pulses
+bool line_sensors[20] = {0};                        //? NJL sensors status that sees the line(1) or not(0)
 //* Tasks *//
 volatile uint8_t Task1ms = 0, Task5ms = 0, Task10ms = 0, Task50ms = 0;
 /* USER CODE END PV */
@@ -72,7 +80,43 @@ volatile uint8_t Task1ms = 0, Task5ms = 0, Task10ms = 0, Task50ms = 0;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if (huart == &huart5)
+  {
+    robot.angle = get_robot_angle();
+  }
+}
 
+int get_robot_angle()
+{
+  int angle;
+  for (uint8_t i = 20; i < 50; i++)
+  {
+    if (rx_dma_buff[i] == 0x5A)
+    {
+      end_index = i;
+      break;
+    }
+  }
+  for (uint8_t i = end_index - 20, j = 0; i <= end_index; i++, j++)
+  {
+    bno_data[j] = rx_dma_buff[i];
+  }
+  // robot.angle = (uint16_t)(bno_data[4] << 8 | bno_data[5]) / 100;
+  angle = ((uint16_t)(bno_data[4] << 8 | bno_data[5]) / 100) - robot.offset_angle;
+  // robot.angle -= robot.offset_angle;
+  // if (robot.angle < 0)
+  // {
+  //   robot.angle += 360;
+  // }
+  if (angle < 0)
+    angle += 360;
+  if (angle >= 360)
+    angle = 0;
+
+  return angle;
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -108,6 +152,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_I2C2_Init();
   MX_UART4_Init();
   MX_TIM1_Init();
@@ -117,12 +162,17 @@ int main(void)
   MX_TIM8_Init();
   MX_TIM12_Init();
   MX_TIM4_Init();
+  MX_TIM7_Init();
+  MX_UART5_Init();
   /* USER CODE BEGIN 2 */
   start_timers();
-  ssd1306_Init(&hi2c2);
-  I2Cdev_init(&hi2c2);
+  // ssd1306_Init(&hi2c2);
+  // I2Cdev_init(&hi2c2);
   LL_mDelay(2000); //! Wait for BNO055 to be ready(Boot time)
-  BNO055_Config();
+  HAL_UART_Receive_DMA(&huart5, rx_dma_buff, 50);
+  HAL_UART_Transmit(&huart5, config_data, 3, 100);
+  HAL_Delay(1000);
+  robot.offset_angle = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -142,69 +192,16 @@ int main(void)
       break;
     }
   }
+  robot.offset_angle = robot.angle;
 
   MOTORS_ENABLE();
-
-  // while (1)
-  // {
-  //   set_motors(0, 0, 0, 0);
-  //   HAL_Delay(5000);
-  //   for (int i = 0; i < 85; i += 1)
-  //   {
-  //     set_motors(i, i, i, i);
-
-  //     HAL_Delay(25);
-  //   }
-
-  //   for (int i = 85; i > 0; i -= 1)
-  //   {
-  //     set_motors(i, i, i, i);
-
-  //     HAL_Delay(25);
-  //   }
-
-  //   for (int i = 0; i > -85; i -= 1)
-  //   {
-  //     set_motors(i, i, i, i);
-
-  //     HAL_Delay(25);
-  //   }
-
-  //   for (int i = -85; i < 0; i += 1)
-  //   {
-  //     set_motors(i, i, i, i);
-
-  //     HAL_Delay(25);
-  //   }
-  // }
 
   while (1)
   {
     measure_ball_data(sensors, &ball);
 
-    if (!robot.is_braking && !robot.in_out) //! Needs check
-    {
-      if (robot.out_detect && abs(robot.out_angle - ball.angle) < 45) //! Needs to change with distance of the ball
-      {
-        robot.move_angle = 0;
-        robot.percent_speed = 0;
-      }
-      else
-      {
-        robot.out_detect = false;
-        get_ball(&ball);
-      }
-    }
-
-    if (!robot.is_braking)
-    {
-      robot_move(robot.move_angle, robot.percent_speed);
-    }
-    else
-    {
-      robot_brake(robot.move_angle, BRAKE_PERCENT_SPEED, 10);
-      // robot_brake(robot.move_angle, BRAKE_PERCENT_SPEED, 200);
-    }
+    get_ball(&ball);
+    robot_move(robot.move_angle, robot.percent_speed);
 
     //* Out code
     read_line_sensors(line_sensors); //? Update line_sensors array

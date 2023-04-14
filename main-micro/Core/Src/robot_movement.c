@@ -85,22 +85,6 @@ const int motor_speed_table[72][2] = {
     {65, 75},
 };
 
-// void motors_enable()
-// {
-//     MOTOR1_ENABLE();
-//     MOTOR2_ENABLE();
-//     MOTOR3_ENABLE();
-//     MOTOR4_ENABLE();
-// }
-
-// void motors_disable()
-// {
-//     MOTOR1_DISABLE();
-//     MOTOR2_DISABLE();
-//     MOTOR3_DISABLE();
-//     MOTOR4_DISABLE();
-// }
-
 void set_motors(int motor_1, int motor_2, int motor_3, int motor_4)
 {
     //***********Set range of values************
@@ -165,36 +149,6 @@ void set_motors(int motor_1, int motor_2, int motor_3, int motor_4)
     //******************************************
 }
 
-// uint16_t get_motor_value(int8_t percent_velocity)
-// {
-//     return (14 * percent_velocity) + (MAX_PWM_VALUE / 2);
-// }
-
-// void set_motors(int motor_1, int motor_2, int motor_3, int motor_4)
-// {
-//     //***********Set range of values************
-//     motor_1 = motor_1 > MAX_VELOCITY ? MAX_VELOCITY : motor_1;
-//     motor_2 = motor_2 > MAX_VELOCITY ? MAX_VELOCITY : motor_2;
-//     motor_3 = motor_3 > MAX_VELOCITY ? MAX_VELOCITY : motor_3;
-//     motor_4 = motor_4 > MAX_VELOCITY ? MAX_VELOCITY : motor_4;
-
-//     motor_1 = motor_1 < -MAX_VELOCITY ? -MAX_VELOCITY : motor_1;
-//     motor_2 = motor_2 < -MAX_VELOCITY ? -MAX_VELOCITY : motor_2;
-//     motor_3 = motor_3 < -MAX_VELOCITY ? -MAX_VELOCITY : motor_3;
-//     motor_4 = motor_4 < -MAX_VELOCITY ? -MAX_VELOCITY : motor_4;
-//     //******************************************
-
-//     SET_MOTOR_1(get_motor_value(motor_1));
-//     SET_MOTOR_2(get_motor_value(motor_2));
-//     SET_MOTOR_3(get_motor_value(motor_3));
-//     SET_MOTOR_4(get_motor_value(motor_4));
-// }
-
-// uint16_t get_motor_value(int8_t percent_velocity)
-// {
-//     return (14 * percent_velocity) + (MAX_PWM_VALUE / 2);
-// }
-
 //? Robot angle is our error because target is 0
 int pid_calculator(int error)
 {
@@ -211,6 +165,16 @@ int pid_calculator(int error)
     p = -error;
     d = error - previous_error;
 
+    // if (p > 90)
+    // {
+    //     p = 90;
+    // }
+    // else if (p < -90)
+    // {
+    //     p = -90;
+    // }
+    // pid = sinf(p * DEGREE_TO_RADIAN) * 35;
+
     pid = (KP * p) + (KD * d);
     previous_error = error;
 
@@ -222,8 +186,8 @@ void robot_move(int angle, float percent_speed)
     int m1 = 0, m2 = 0, m3 = 0, m4 = 0; //? motors value
     int pid_value;
 
-    // pid_value = pid_calculator(robot.angle);
-    pid_value = pid_calculator(BNO055_read());
+    pid_value = pid_calculator(robot.angle);
+    // pid_value = pid_calculator(BNO055_read());
 
     //* Add pid value to omni-directional
     m1 = -pid_value;
@@ -231,7 +195,6 @@ void robot_move(int angle, float percent_speed)
     m3 = pid_value;
     m4 = -pid_value;
 
-    angle -= 1;
     if (angle < 0)
         angle += 360;
     angle /= 5;
