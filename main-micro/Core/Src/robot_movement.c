@@ -253,7 +253,7 @@ void robot_brake(int angle, float percent_speed, uint16_t time)
     if (start_time > time)
     {
         start_time = 0;
-        robot.is_braking = false;
+        robot.must_brake = false;
     }
     else
     {

@@ -81,6 +81,8 @@ void Error_Handler(void);
 #define TSSP4_GPIO_Port GPIOA
 #define TSSP11_Pin LL_GPIO_PIN_3
 #define TSSP11_GPIO_Port GPIOA
+#define SPI1_BNO_SS_Pin LL_GPIO_PIN_4
+#define SPI1_BNO_SS_GPIO_Port GPIOA
 #define MOTORS_ENABLE_Pin LL_GPIO_PIN_4
 #define MOTORS_ENABLE_GPIO_Port GPIOC
 #define MOTOR2_DIRECTION_Pin LL_GPIO_PIN_5

@@ -124,6 +124,8 @@ void main()
       
 //!      r_toggle();
 //!      delay_ms(5);
+
+//!      printf("%d\r\n", njl_values[6]);
       
       
       if (callibrate_key() && !callibration_done) // callibration
@@ -177,13 +179,29 @@ void main()
 
       check_sensors();
       
-      if (counter > 1)
+     if (counter > 1)
       {
          b_high();
       }
       else
       {
          b_low();
+      }
+      if (counter > 2)
+      {
+         l_high();
+      }
+      else
+      {
+         l_low();
+      }
+      if (counter > 3)
+      {
+         f_high();
+      }
+      else
+      {
+         f_low();
       }
 //!      uint32_to_uint8(digital_value, data);
       convert32to24(digital_value, &data[0], &data[1], &data[2]);

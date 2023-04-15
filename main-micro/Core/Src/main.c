@@ -20,6 +20,7 @@
 #include "main.h"
 #include "dma.h"
 #include "i2c.h"
+#include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -60,13 +61,7 @@
 
 /* USER CODE BEGIN PV */
 volatile uint8_t tx_buff[100]; //? Data to send with uart
-volatile uint8_t rx_dma_buff[50];
-// volatile uint8_t rx_buff[50];
-uint8_t index_counter = 0, comming_data;
-uint8_t bno_data[20] = {0};
-// uint8_t config_data[3] = {0xAA, 0x38, 0xE2};
-uint8_t config_data[3] = {0xAA, 0x58, 0xE2};
-uint8_t end_index;
+uint8_t index_counter = 0;
 uint8_t oled_buff[20]; //? Data to show in oled
 volatile TSSP sensors[16];
 volatile BALL ball;
@@ -80,41 +75,27 @@ volatile uint8_t Task1ms = 0, Task5ms = 0, Task10ms = 0, Task50ms = 0;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-  if (huart == &huart5)
-  {
-    robot.angle = get_robot_angle();
-  }
-}
-
 int get_robot_angle()
 {
   int angle;
-  for (uint8_t i = 20; i < 50; i++)
-  {
-    if (rx_dma_buff[i] == 0x5A)
-    {
-      end_index = i;
-      break;
-    }
-  }
-  for (uint8_t i = end_index - 20, j = 0; i <= end_index; i++, j++)
-  {
-    bno_data[j] = rx_dma_buff[i];
-  }
-  // robot.angle = (uint16_t)(bno_data[4] << 8 | bno_data[5]) / 100;
-  angle = ((uint16_t)(bno_data[4] << 8 | bno_data[5]) / 100) - robot.offset_angle;
-  // robot.angle -= robot.offset_angle;
-  // if (robot.angle < 0)
-  // {
-  //   robot.angle += 360;
-  // }
-  if (angle < 0)
-    angle += 360;
-  if (angle >= 360)
-    angle = 0;
+  uint8_t data[2];
+  HAL_GPIO_WritePin(SPI1_BNO_SS_GPIO_Port, SPI1_BNO_SS_Pin, 0);
+  HAL_SPI_Transmit(&hspi1, "L", 1, 100);
+  HAL_Delay(1);
+  HAL_SPI_Receive(&hspi1, &data[0], 1, 100);
+  __NOP();
+  HAL_SPI_Transmit(&hspi1, "H", 1, 100);
+  HAL_Delay(1);
+  HAL_SPI_Receive(&hspi1, &data[1], 1, 100);
+  __NOP();
+  HAL_GPIO_WritePin(SPI1_BNO_SS_GPIO_Port, SPI1_BNO_SS_Pin, 1);
+  HAL_Delay(1);
 
+  angle = (data[1] << 8) | data[0];
+  if (angle >= 360)
+  {
+    angle = 0;
+  }
   return angle;
 }
 /* USER CODE END PFP */
@@ -164,15 +145,13 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM7_Init();
   MX_UART5_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
   start_timers();
   // ssd1306_Init(&hi2c2);
   // I2Cdev_init(&hi2c2);
   LL_mDelay(2000); //! Wait for BNO055 to be ready(Boot time)
-  HAL_UART_Receive_DMA(&huart5, rx_dma_buff, 50);
-  HAL_UART_Transmit(&huart5, config_data, 3, 100);
-  HAL_Delay(1000);
-  robot.offset_angle = 0;
+  // BNO055_Config();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -191,17 +170,52 @@ int main(void)
       TurnOffLED();
       break;
     }
+
+    // for (uint8_t i = 0x10; i < 0xF0; i += 2)
+    // {
+    //   if (!HAL_I2C_IsDeviceReady(&hi2c2, i, 1, 200))
+    //   {
+    //     sprintf(tx_buff, "Address: %d\r\n", i);
+    //     PRINT_BUFFER();
+    //   }
+    // }
   }
-  robot.offset_angle = robot.angle;
 
   MOTORS_ENABLE();
 
+  // while (1)
+  // {
+  //   set_motors(50, 50, 50, 50);
+  // }
+
   while (1)
   {
+    robot.angle = get_robot_angle();
     measure_ball_data(sensors, &ball);
 
-    get_ball(&ball);
-    robot_move(robot.move_angle, robot.percent_speed);
+    if (!robot.must_brake && !robot.in_out) //! Needs check
+    {
+      if (robot.out_detect && abs(robot.out_angle - ball.angle) < 45) //! Needs to change with distance of the ball
+      {
+        robot.move_angle = 0;
+        robot.percent_speed = 0;
+      }
+      else
+      {
+        robot.out_detect = false;
+        get_ball(&ball);
+      }
+    }
+
+    if (!robot.must_brake)
+    {
+      robot_move(robot.move_angle, robot.percent_speed);
+    }
+    else
+    {
+      robot_brake(robot.move_angle, BRAKE_PERCENT_SPEED, 10);
+      // robot_brake(robot.move_angle, BRAKE_PERCENT_SPEED, 200);
+    }
 
     //* Out code
     read_line_sensors(line_sensors); //? Update line_sensors array
@@ -233,12 +247,18 @@ int main(void)
         }
         robot.percent_speed = LINE_KP * robot.out_error;
       }
-      else
+      else if (robot.in_out)
       {
-        robot.is_braking = robot.in_out ? true : false;
+        // robot.must_brake = robot.in_out ? true : false;
+        robot.must_brake = true;
         robot.in_out = false;
         robot.out_error = 0;
         robot.out_detect = true;
+        robot.percent_speed = 0;
+      }
+      else
+      {
+        robot.percent_speed = 0;
       }
 
       // robot.percent_speed = LINE_KP * robot.out_error;
@@ -249,11 +269,13 @@ int main(void)
       robot.out_direction = NOTHING;
       robot.in_out = false;
       robot.out_detect = true;
+      robot.percent_speed = 0; //! Debug
     }
     else if (robot.line_detect)
     {
       robot.out_detect = true;
       robot.in_out = false;
+      robot.percent_speed = 0;
     }
 
     //! Debug

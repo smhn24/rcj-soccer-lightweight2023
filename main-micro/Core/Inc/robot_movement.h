@@ -18,10 +18,10 @@
 #define MAX_DISTANCE 29.1 //? 11 + maxmimum distance
 #define MAX_SPEED_PERCENT 0.8
 // #define MAX_SPEED_PERCENT 0.65
-// #define MAX_GET_BALL_SPEED_PERCENT 0.5
-#define MAX_GET_BALL_SPEED_PERCENT 0.7
-#define BRAKE_PERCENT_SPEED 0.6
-// #define BRAKE_PERCENT_SPEED 0.85
+#define MAX_GET_BALL_SPEED_PERCENT 0.55
+// #define MAX_GET_BALL_SPEED_PERCENT 0.7
+// #define BRAKE_PERCENT_SPEED 0.6
+#define BRAKE_PERCENT_SPEED 1
 
 // #define KP 17
 #define KP 0.65
@@ -59,7 +59,7 @@ typedef struct
     volatile bool out_detect;  //? Robot detects out
     volatile bool in_out;      //? Robot is in the out
     volatile bool line_detect; //? Robot sees the line
-    volatile bool is_braking;
+    volatile bool must_brake;
 } Robot;
 
 void get_ball(BALL *ball);
