@@ -22,6 +22,7 @@
 // #define MAX_GET_BALL_SPEED_PERCENT 0.7
 // #define BRAKE_PERCENT_SPEED 0.6
 #define BRAKE_PERCENT_SPEED 1
+#define MIN_VERTICAL_DISTANCE 12
 
 // #define KP 17
 #define KP 0.65

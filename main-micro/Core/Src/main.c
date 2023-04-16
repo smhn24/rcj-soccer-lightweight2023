@@ -150,7 +150,7 @@ int main(void)
   start_timers();
   // ssd1306_Init(&hi2c2);
   // I2Cdev_init(&hi2c2);
-  LL_mDelay(2000); //! Wait for BNO055 to be ready(Boot time)
+  LL_mDelay(3000); //! Wait for BNO055 to be ready(Boot time)
   // BNO055_Config();
   /* USER CODE END 2 */
 
@@ -193,12 +193,31 @@ int main(void)
     robot.angle = get_robot_angle();
     measure_ball_data(sensors, &ball);
 
+    // get_ball(&ball);          //! Debug
+    // robot.must_brake = false; //! Debug
+
     if (!robot.must_brake && !robot.in_out) //! Needs check
     {
-      if (robot.out_detect && abs(robot.out_angle - ball.angle) < 45) //! Needs to change with distance of the ball
+      if (robot.out_detect && abs(robot.out_angle - ball.angle) < 80) //! Needs to change with distance of the ball
       {
-        robot.move_angle = 0;
-        robot.percent_speed = 0;
+        if (ball.distance < MIN_VERTICAL_DISTANCE)
+        {
+          if ((ball.angle > 300 && ball.angle < 360) || (ball.angle > 0 && ball.angle < 60))
+          {
+            robot.move_angle = 0;
+            robot.percent_speed = 0.5; // TODO needs change
+          }
+          else if ((ball.angle > 120 && ball.angle < 180) || (ball.angle < 180 && ball.angle > 240))
+          {
+            robot.move_angle = 180;
+            robot.percent_speed = 0.5; // TODO needs change
+          }
+        }
+        else
+        {
+          robot.move_angle = 0;
+          robot.percent_speed = 0;
+        }
       }
       else
       {
@@ -223,6 +242,7 @@ int main(void)
 
     if ((robot.on_line_sensors > 0 && robot.on_line_sensors < 10) && !robot.line_detect) //? At least one sensor detected line for the first time
     {
+      // robot.must_brake = true;
       robot.line_detect = true;
       get_out_direction(line_sensors);
     }
@@ -235,7 +255,7 @@ int main(void)
       // robot.percent_speed = LINE_KP * robot.out_error;
       // robot.percent_speed = robot.out_error > 3 ? LINE_KP * robot.out_error : 0;
 
-      if (robot.out_error > 5)
+      if (robot.out_error > 6)
       {
         robot.in_out = true;
 
@@ -247,18 +267,13 @@ int main(void)
         }
         robot.percent_speed = LINE_KP * robot.out_error;
       }
-      else if (robot.in_out)
-      {
-        // robot.must_brake = robot.in_out ? true : false;
-        robot.must_brake = true;
-        robot.in_out = false;
-        robot.out_error = 0;
-        robot.out_detect = true;
-        robot.percent_speed = 0;
-      }
       else
       {
-        robot.percent_speed = 0;
+        robot.must_brake = robot.in_out ? true : false;
+        robot.in_out = false;
+        robot.out_error = 0;
+        // robot.out_angle = 0;
+        robot.out_detect = true;
       }
 
       // robot.percent_speed = LINE_KP * robot.out_error;
@@ -269,13 +284,17 @@ int main(void)
       robot.out_direction = NOTHING;
       robot.in_out = false;
       robot.out_detect = true;
-      robot.percent_speed = 0; //! Debug
+      // robot.percent_speed = 0; //! Debug
+    }
+    else if (robot.on_line_sensors == 0)
+    {
+      robot.out_detect = false;
     }
     else if (robot.line_detect)
     {
       robot.out_detect = true;
       robot.in_out = false;
-      robot.percent_speed = 0;
+      // robot.percent_speed = 0;
     }
 
     //! Debug
@@ -288,7 +307,9 @@ int main(void)
     //   TurnOffLED();
     // }
 
-    // TODO: Out angle offset must check
+    // sprintf(tx_buff, "Angle: %d   Distance: %d\r\n", ball.angle, ball.distance);
+    // PRINT_BUFFER();
+    // ! Out needs change callibration
 
     /* USER CODE END WHILE */
 
