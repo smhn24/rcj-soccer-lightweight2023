@@ -162,7 +162,8 @@ void main()
          }
          for (int i = 0; i < 20; i++)
          {
-            threshold_values[i] = max_njl[i] - 40;
+//!            threshold_values[i] = max_njl[i] - 40;
+            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 1.5) + min_njl[i];
 //!            threshold_values[i] = (float)max_njl[i] * 0.65 + (float)min_njl[i] * 0.35;
 //!            threshold_values[i] = (float)max_njl[i] * 0.5 + (float)min_njl[i] * 0.5;
             write_eeprom(i, threshold_values[i]);

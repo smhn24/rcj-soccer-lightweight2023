@@ -16,18 +16,23 @@
 #define LEFT_TOLERANCE_ANGLE 335
 #define RIGHT_TOLERANCE_ANGLE 25
 #define MAX_DISTANCE 29.1 //? 11 + maxmimum distance
-#define MAX_SPEED_PERCENT 0.8
-// #define MAX_SPEED_PERCENT 0.65
+// #define MAX_SPEED_PERCENT 0.8
+// #define MAX_SPEED_PERCENT 0.5
+#define MAX_SPEED_PERCENT 0.65
 #define MAX_GET_BALL_SPEED_PERCENT 0.55
 // #define MAX_GET_BALL_SPEED_PERCENT 0.7
 // #define BRAKE_PERCENT_SPEED 0.6
 #define BRAKE_PERCENT_SPEED 1
+// #define BRAKE_PERCENT_SPEED 0.85
 #define MIN_VERTICAL_DISTANCE 12
+#define BRAKE_TIME_LIMIT 300
+// #define BRAKE_TIME_LIMIT 100
 
-// #define KP 17
+// #define KP 0.85
 #define KP 0.65
+#define KI 0.005
 // #define KD 6
-#define KD 0
+#define KD 0.05
 
 #define MOTORS_ENABLE() LL_GPIO_SetOutputPin(MOTORS_ENABLE_GPIO_Port, MOTORS_ENABLE_Pin)
 #define MOTORS_DISABLE() LL_GPIO_ResetOutputPin(MOTORS_ENABLE_GPIO_Port, MOTORS_ENABLE_Pin)

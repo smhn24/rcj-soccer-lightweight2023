@@ -174,7 +174,7 @@ void get_out_angle()
         robot.out_angle += 360;
     robot.out_angle *= -1;
     robot.out_angle += 360;
-    robot.out_angle += 13;
+    // robot.out_angle += 13;
 }
 
 void get_out_error()
