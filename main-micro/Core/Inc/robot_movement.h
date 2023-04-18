@@ -57,6 +57,7 @@ typedef struct
     volatile int offset_angle;
     volatile int move_angle;
     volatile int out_angle;
+    volatile uint16_t brake_done;  //? Brake timeout
     volatile uint8_t out_edges[2]; //? NJL edges for out angle
     volatile uint8_t on_line_sensors;
     volatile uint8_t first_out_sensor;

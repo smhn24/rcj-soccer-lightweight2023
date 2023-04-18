@@ -44,7 +44,6 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 // extern volatile Robot robot;
-extern uint16_t brake_done;
 extern Robot robot;
 extern TSSP sensors[16];
 extern uint16_t width_temp[16][AVERAGE_DATA_NUMBER];
@@ -662,14 +661,14 @@ void TIM7_IRQHandler(void)
   /* USER CODE BEGIN TIM7_IRQn 0 */
   if (robot.on_line_sensors == 0)
   {
-    if (brake_done < 10000)
+    if (robot.brake_done < 10000)
     {
-      brake_done++;
+      robot.brake_done++;
     }
   }
   else
   {
-    brake_done = 0;
+    robot.brake_done = 0;
   }
 
   Task1ms++;
