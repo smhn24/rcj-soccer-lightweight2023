@@ -246,7 +246,7 @@ inline void get_ball(BALL *ball)
     }
 }
 
-void robot_brake(int angle, float percent_speed, uint16_t time)
+void robot_brake(uint16_t time)
 {
     static uint16_t start_time = 0;
     switch (robot.out_direction)
@@ -264,10 +264,10 @@ void robot_brake(int angle, float percent_speed, uint16_t time)
         robot.move_angle = 0;
         break;
     default:
-        angle -= 180;
-        if (angle < 0)
+        robot.move_angle -= 180;
+        if (robot.move_angle < 0)
         {
-            angle += 360;
+            robot.move_angle += 360;
         }
         break;
     }
@@ -279,7 +279,8 @@ void robot_brake(int angle, float percent_speed, uint16_t time)
     }
     else
     {
-        robot_move(angle, percent_speed);
+        robot.percent_speed = BRAKE_PERCENT_SPEED;
+        robot_move(robot.move_angle, robot.percent_speed);
         start_time++;
     }
 }

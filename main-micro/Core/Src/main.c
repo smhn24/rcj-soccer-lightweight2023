@@ -179,7 +179,7 @@ int main(void)
     }
   }
 
-  MOTORS_ENABLE();
+  // MOTORS_ENABLE();
 
   while (1)
   {
@@ -201,6 +201,11 @@ int main(void)
           {
             robot.move_angle = 180;
             robot.percent_speed = MAX_SPEED_PERCENT;
+          }
+          else
+          {
+            robot.move_angle = 0;
+            robot.percent_speed = 0;
           }
         }
         else
@@ -231,11 +236,11 @@ int main(void)
       {
         if (robot.out_direction == LEFT || robot.out_direction == RIGHT)
         {
-          robot_brake(robot.move_angle, BRAKE_PERCENT_SPEED, 20);
+          robot_brake(20);
         }
         else
         {
-          robot_brake(robot.move_angle, BRAKE_PERCENT_SPEED, 75);
+          robot_brake(25);
         }
       }
 
@@ -244,6 +249,9 @@ int main(void)
 
     if (Task10ms > 9)
     {
+      sprintf(tx_buff, "N: %d   e0: %d   e1: %d  D: %d   A: %d\r\n", robot.on_line_sensors, robot.out_edges[0], robot.out_edges[1], robot.out_direction, robot.out_angle);
+      PRINT_BUFFER();
+
       Task10ms -= 10;
     }
 
@@ -291,22 +299,17 @@ int main(void)
         robot.out_detect = true;
       }
     }
-    else if (robot.line_detect && robot.on_line_sensors == 0)
+    else if (robot.line_detect && robot.on_line_sensors < 2)
     {
       robot.line_detect = false;
       robot.out_direction = NOTHING;
       robot.in_out = false;
       robot.out_detect = true;
     }
-    else if (robot.on_line_sensors == 0)
-    {
-      robot.out_detect = false;
-    }
-    else if (robot.line_detect)
-    {
-      robot.out_detect = true;
-      robot.in_out = false;
-    }
+    // else if (robot.on_line_sensors == 0)
+    // {
+    //   robot.out_detect = false;
+    // }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
