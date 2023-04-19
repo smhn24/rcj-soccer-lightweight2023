@@ -59,6 +59,7 @@ ISR(SPI_STC_vect) {
 
 void loop() {
   angle = bno055_read();
+  Serial.println(angle);
   if (process_it) {
     if (received == 'L') {
       SPDR = lowByte(angle);

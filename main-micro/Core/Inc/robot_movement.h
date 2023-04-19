@@ -61,7 +61,9 @@ typedef struct
     volatile uint8_t out_edges[2]; //? NJL edges for out angle
     volatile uint8_t on_line_sensors;
     volatile uint8_t first_out_sensor;
-    volatile uint8_t out_error;
+    volatile int8_t out_error;
+    volatile int8_t out_error_x;
+    volatile int8_t out_error_y;
     volatile direction_t out_direction;
     volatile bool out_detect;  //? Robot detects out
     volatile bool in_out;      //? Robot is in the out

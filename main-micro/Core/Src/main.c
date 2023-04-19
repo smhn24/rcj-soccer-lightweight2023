@@ -68,7 +68,7 @@ uint8_t tx_buff[100];                               //? Data to send with uart
 bool line_sensors[20] = {0};                        //? NJL sensors status that sees the line(1) or not(0)
 
 //* Tasks *//
-volatile uint8_t Task1ms = 0, Task5ms = 0, Task10ms = 0, Task50ms = 0;
+volatile uint16_t Task1ms = 0, Task5ms = 0, Task10ms = 0, Task50ms = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -165,6 +165,16 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   TurnOnLED();
   MOTORS_DISABLE();
+
+  // while (1)
+  // {
+  //   update_robot_angle();
+  //   sprintf(tx_buff, "Angle: %d\r\n", robot.angle);
+  //   PRINT_BUFFER();
+  //   ToggleLED();
+  //   LL_mDelay(500);
+  // }
+
   //! Wait to start the task
   while (1)
   {
@@ -179,7 +189,27 @@ int main(void)
     }
   }
 
-  // MOTORS_ENABLE();
+  MOTORS_ENABLE();
+  int m_ang = 1;
+  while (1)
+  {
+    update_robot_angle();
+    if (Task50ms > 499)
+    {
+      // m_ang = 360;
+      if (m_ang == 1)
+      {
+        m_ang = 360;
+      }
+      else
+      {
+        m_ang = 1;
+      }
+
+      robot_move(m_ang, 0.5);
+      Task50ms -= 500;
+    }
+  }
 
   while (1)
   {
@@ -188,31 +218,22 @@ int main(void)
 
     if (!robot.must_brake && !robot.in_out)
     {
-      if (robot.out_detect && abs(robot.out_angle - ball.angle) < 70)
+      // if (robot.out_direction == FRONT)
+      // {
+      //   if (ball.angle > 180)
+      //   {
+      //     robot.out_angle = 360;
+      //   }
+      //   else
+      //   {
+      //     robot.out_angle = 0;
+      //   }
+      // }
+      // if (robot.out_detect && abs(robot.out_angle - ball.angle) < 70)
+      if (robot.out_detect && abs(robot.out_angle - ball.angle) < 45)
       {
-        if (ball.distance < MIN_VERTICAL_DISTANCE)
-        {
-          if ((ball.angle > 300 && ball.angle < 360) || (ball.angle > 0 && ball.angle < 60))
-          {
-            robot.move_angle = 0;
-            robot.percent_speed = MAX_SPEED_PERCENT;
-          }
-          else if ((ball.angle > 120 && ball.angle < 180) || (ball.angle < 180 && ball.angle > 240))
-          {
-            robot.move_angle = 180;
-            robot.percent_speed = MAX_SPEED_PERCENT;
-          }
-          else
-          {
-            robot.move_angle = 0;
-            robot.percent_speed = 0;
-          }
-        }
-        else
-        {
-          robot.move_angle = 0;
-          robot.percent_speed = 0;
-        }
+        robot.move_angle = 0;
+        robot.percent_speed = 0;
       }
       else
       {
@@ -234,14 +255,7 @@ int main(void)
       }
       else
       {
-        if (robot.out_direction == LEFT || robot.out_direction == RIGHT)
-        {
-          robot_brake(20);
-        }
-        else
-        {
-          robot_brake(25);
-        }
+        robot_brake(25);
       }
 
       Task5ms -= 5;
@@ -249,7 +263,8 @@ int main(void)
 
     if (Task10ms > 9)
     {
-      sprintf(tx_buff, "N: %d   e0: %d   e1: %d  D: %d   A: %d\r\n", robot.on_line_sensors, robot.out_edges[0], robot.out_edges[1], robot.out_direction, robot.out_angle);
+      // sprintf(tx_buff, "N: %d   e0: %d   e1: %d  D: %d   A: %d\r\n", robot.on_line_sensors, robot.out_edges[0], robot.out_edges[1], robot.out_direction, robot.out_angle);
+      sprintf(tx_buff, "ODir: %d  ErrX: %d   ErrY: %d  OAng: %d  BAng: %d\r\n", robot.out_direction, robot.out_error_x, robot.out_error_y, robot.out_angle, ball.angle);
       PRINT_BUFFER();
 
       Task10ms -= 10;
@@ -276,10 +291,11 @@ int main(void)
     else if (robot.line_detect && robot.on_line_sensors > 1) //? At least 2 sensors see the line for gettting out error & out angle
     {
       get_edges(line_sensors, robot.out_direction, robot.out_edges);
-      get_out_angle();
+      get_out_direction_edge(line_sensors, robot.first_out_sensor);
       get_out_error();
 
-      if (robot.out_error > 4)
+      // if (robot.out_error > 4)
+      if (robot.out_error_x > 0)
       {
         robot.in_out = true;
 
@@ -289,13 +305,24 @@ int main(void)
         {
           robot.move_angle += 360;
         }
-        robot.percent_speed = LINE_KP * robot.out_error;
+        // robot.percent_speed = LINE_KP * robot.out_error;
+        robot.percent_speed = LINE_KP * robot.out_error_x;
+
+        //! Test
+        if (abs(robot.out_angle - ball.angle) > 75)
+        {
+          robot.in_out = false;
+          robot.out_detect = true;
+          robot.percent_speed = 0;
+          // robot.out_error_x = 0;
+        }
       }
       else
       {
         robot.percent_speed = 0;
         robot.in_out = false;
-        robot.out_error = 0;
+        // robot.out_error = 0;
+        robot.out_error_x = 0;
         robot.out_detect = true;
       }
     }
@@ -306,10 +333,6 @@ int main(void)
       robot.in_out = false;
       robot.out_detect = true;
     }
-    // else if (robot.on_line_sensors == 0)
-    // {
-    //   robot.out_detect = false;
-    // }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

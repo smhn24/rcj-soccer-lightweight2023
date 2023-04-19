@@ -199,7 +199,12 @@ void robot_move(int angle, float percent_speed)
     m3 = pid_value;
     m4 = -pid_value;
 
-    if (angle < 0)
+    while (angle > 359)
+    {
+        angle -= 360;
+    }
+
+    while (angle < 0)
         angle += 360;
     angle /= 5;
 
@@ -251,16 +256,16 @@ void robot_brake(uint16_t time)
     static uint16_t start_time = 0;
     switch (robot.out_direction)
     {
-    case LEFT:
+    case W:
         robot.move_angle = 90;
         break;
-    case RIGHT:
+    case E:
         robot.move_angle = 270;
         break;
-    case FRONT:
+    case N:
         robot.move_angle = 180;
         break;
-    case BACK:
+    case S:
         robot.move_angle = 0;
         break;
     default:

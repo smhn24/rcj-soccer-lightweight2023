@@ -18,13 +18,26 @@
 
 #define PRINT_BUFFER() HAL_UART_Transmit_DMA(&huart4, tx_buff, strlen(tx_buff))
 
+// typedef enum __attribute__((packed)) _direction
+// {
+//     LEFT = 0,
+//     RIGHT = 1,
+//     FRONT = 2,
+//     BACK = 3,
+//     NOTHING = 4
+// } direction_t;
+
 typedef enum __attribute__((packed)) _direction
 {
-    LEFT = 0,
-    RIGHT = 1,
-    FRONT = 2,
-    BACK = 3,
-    NOTHING = 4
+    N = 0,
+    NE = 1,
+    E = 2,
+    SE = 3,
+    S = 4,
+    SW = 5,
+    W = 6,
+    NW = 7,
+    NOTHING = 8,
 } direction_t;
 
 void start_timers();
