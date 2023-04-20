@@ -208,6 +208,15 @@ void robot_move(int angle, float percent_speed)
         angle += 360;
     angle /= 5;
 
+    if (percent_speed > 1)
+    {
+        percent_speed = 1;
+    }
+    else if (percent_speed < 0)
+    {
+        percent_speed = 0;
+    }
+
     //* omni-directional
     m1 += motor_speed_table[angle][1] * percent_speed;
     m2 += motor_speed_table[angle][0] * percent_speed;
@@ -224,30 +233,30 @@ inline void get_ball(BALL *ball)
         if (ball->angle > LEFT_TOLERANCE_ANGLE || ball->angle < RIGHT_TOLERANCE_ANGLE)
         {
             ball->get_ball_offset = 0;
-            robot.percent_speed = MAX_SPEED_PERCENT;
+            robot.get_ball_percent_speed = MAX_SPEED_PERCENT;
         }
         else if (ball->angle >= RIGHT_TOLERANCE_ANGLE && ball->angle <= 180) //? Ball is right of the robot
         {
             ball->get_ball_offset = (int)(asinf((float)11 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            robot.percent_speed = MAX_GET_BALL_SPEED_PERCENT;
+            robot.get_ball_percent_speed = MAX_GET_BALL_SPEED_PERCENT;
         }
         else if (ball->angle > 180 && ball->angle <= LEFT_TOLERANCE_ANGLE) //? Ball is left of the robot
         {
             ball->get_ball_offset = (int)(-asinf((float)11 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            robot.percent_speed = MAX_GET_BALL_SPEED_PERCENT;
+            robot.get_ball_percent_speed = MAX_GET_BALL_SPEED_PERCENT;
         }
-        robot.move_angle = ball->get_ball_offset + ball->angle;
+        robot.get_ball_move_angle = ball->get_ball_offset + ball->angle;
     }
     else
     {
-        robot.move_angle = ball->angle;
-        robot.percent_speed = MAX_SPEED_PERCENT;
+        robot.get_ball_move_angle = ball->angle;
+        robot.get_ball_percent_speed = MAX_SPEED_PERCENT;
     }
 
     if (ball->distance < 2)
     {
-        robot.move_angle = 0;
-        robot.percent_speed = 0;
+        robot.get_ball_move_angle = 0;
+        robot.get_ball_percent_speed = 0;
     }
 }
 
@@ -257,35 +266,33 @@ void robot_brake(uint16_t time)
     switch (robot.out_direction)
     {
     case W:
-        robot.move_angle = 90;
+        robot.brake_move_angle = 90;
         break;
     case E:
-        robot.move_angle = 270;
+        robot.brake_move_angle = 270;
         break;
     case N:
-        robot.move_angle = 180;
+        robot.brake_move_angle = 180;
         break;
     case S:
-        robot.move_angle = 0;
+        robot.brake_move_angle = 0;
         break;
     default:
-        robot.move_angle -= 180;
-        if (robot.move_angle < 0)
+        robot.brake_move_angle -= 180;
+        if (robot.brake_move_angle < 0)
         {
-            robot.move_angle += 360;
+            robot.brake_move_angle += 360;
         }
         break;
     }
     if (start_time > time)
     {
         start_time = 0;
-        robot.percent_speed = 0;
         robot.must_brake = false;
     }
     else
     {
-        robot.percent_speed = BRAKE_PERCENT_SPEED;
-        robot_move(robot.move_angle, robot.percent_speed);
+        robot_move(robot.move_angle, BRAKE_PERCENT_SPEED);
         start_time++;
     }
 }

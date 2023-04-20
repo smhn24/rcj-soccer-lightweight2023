@@ -13,12 +13,13 @@
 #define LINE_KP 0.06
 // #define MIN_NJL_SENSORS 3
 #define MIN_NJL_SENSORS 2
+#define MAX_OUT_ERROR 1
 
 void read_line_sensors(bool *line_sensors);
 uint8_t on_line_sensors_number(bool *line_sensors);
-void get_edges(bool *line_sensors, direction_t out_direction, uint8_t *out_edges);
+void get_edges(bool *line_sensors);
 void get_out_direction(bool *line_sensors);
-void get_out_direction_edge(bool *line_sensors, uint8_t first_sensor);
+void get_out_direction_edge(bool *line_sensors);
 void get_out_error();
 // void get_out_angle();
 // inline bool is_quad_1(uint8_t sensor_number);

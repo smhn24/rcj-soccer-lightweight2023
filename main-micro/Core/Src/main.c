@@ -166,15 +166,6 @@ int main(void)
   TurnOnLED();
   MOTORS_DISABLE();
 
-  // while (1)
-  // {
-  //   update_robot_angle();
-  //   sprintf(tx_buff, "Angle: %d\r\n", robot.angle);
-  //   PRINT_BUFFER();
-  //   ToggleLED();
-  //   LL_mDelay(500);
-  // }
-
   //! Wait to start the task
   while (1)
   {
@@ -190,56 +181,92 @@ int main(void)
   }
 
   MOTORS_ENABLE();
-  int m_ang = 1;
-  while (1)
-  {
-    update_robot_angle();
-    if (Task50ms > 499)
-    {
-      // m_ang = 360;
-      if (m_ang == 1)
-      {
-        m_ang = 360;
-      }
-      else
-      {
-        m_ang = 1;
-      }
-
-      robot_move(m_ang, 0.5);
-      Task50ms -= 500;
-    }
-  }
-
+  int temp_angle;
   while (1)
   {
     update_robot_angle();
     measure_ball_data(sensors, &ball);
+    get_ball(&ball);
 
-    if (!robot.must_brake && !robot.in_out)
+    if (robot.in_out_area)
     {
-      // if (robot.out_direction == FRONT)
-      // {
-      //   if (ball.angle > 180)
-      //   {
-      //     robot.out_angle = 360;
-      //   }
-      //   else
-      //   {
-      //     robot.out_angle = 0;
-      //   }
-      // }
-      // if (robot.out_detect && abs(robot.out_angle - ball.angle) < 70)
-      if (robot.out_detect && abs(robot.out_angle - ball.angle) < 45)
+      if (robot.line_detect && (robot.out_error_x > MAX_OUT_ERROR || robot.out_error_y > MAX_OUT_ERROR))
       {
-        robot.move_angle = 0;
-        robot.percent_speed = 0;
+        robot.move_angle = robot.out_angle - 180;
+        if (robot.move_angle < 0)
+        {
+          robot.move_angle += 360;
+        }
+        robot.percent_speed = LINE_KP * (robot.out_error_x + robot.out_error_y);
       }
+      else if (robot.out_direction == E)
+      {
+        if (robot.get_ball_move_angle < 180)
+        {
+          robot.percent_speed = 0;
+          if (robot.get_ball_move_angle < 70)
+          {
+            robot.move_angle = 0;
+            robot.percent_speed = abs(cosf((robot.get_ball_move_angle + 20) * DEGREE_TO_RADIAN));
+          }
+          else if (robot.get_ball_move_angle > 110)
+          {
+            robot.move_angle = 180;
+            robot.percent_speed = abs(cosf((robot.get_ball_move_angle - 20) * DEGREE_TO_RADIAN));
+          }
+        }
+        else if (!robot.must_brake)
+        {
+          temp_angle = robot.move_angle;
+          robot.in_out_area = false;
+        }
+        else
+        {
+          robot.percent_speed = 0;
+        }
+      }
+
       else
       {
-        robot.out_detect = false;
-        get_ball(&ball);
+        robot.percent_speed = 0;
       }
+    }
+    else
+    {
+      robot.move_angle = robot.get_ball_move_angle;
+      robot.percent_speed = robot.get_ball_percent_speed;
+    }
+
+    sprintf(tx_buff, "eX: %d   eY: %d   io: %d   D: %d  mA: %d  get: %d   p: %d\r\n", robot.out_error_x, robot.out_error_y, robot.in_out_area, robot.out_direction, robot.move_angle, robot.get_ball_move_angle, robot.percent_speed);
+    PRINT_BUFFER();
+    //* Out code
+    read_line_sensors(line_sensors); //? Update line_sensors array
+    robot.on_line_sensors = on_line_sensors_number(line_sensors);
+
+    //? Get out main direction
+    if (robot.on_line_sensors > 0 && !robot.line_detect)
+    {
+      get_out_direction(line_sensors);
+      robot.line_detect = true;
+      if (robot.brake_done > BRAKE_TIME_LIMIT)
+      {
+        robot.must_brake = true;
+      }
+      robot.in_out_area = true;
+    }
+    else if (robot.on_line_sensors > 1)
+    {
+      get_edges(line_sensors);
+      get_out_direction_edge(line_sensors);
+      get_out_error();
+    }
+
+    else if (robot.on_line_sensors < 1)
+    {
+      robot.line_detect = false;
+      robot.out_error_x = 0;
+      robot.out_error_y = 0;
+      // TODO reset out direction
     }
 
     if (Task1ms > 0)
@@ -264,8 +291,8 @@ int main(void)
     if (Task10ms > 9)
     {
       // sprintf(tx_buff, "N: %d   e0: %d   e1: %d  D: %d   A: %d\r\n", robot.on_line_sensors, robot.out_edges[0], robot.out_edges[1], robot.out_direction, robot.out_angle);
-      sprintf(tx_buff, "ODir: %d  ErrX: %d   ErrY: %d  OAng: %d  BAng: %d\r\n", robot.out_direction, robot.out_error_x, robot.out_error_y, robot.out_angle, ball.angle);
-      PRINT_BUFFER();
+      // sprintf(tx_buff, "ODir: %d  ErrX: %d   ErrY: %d  OAng: %d  BAng: %d\r\n", robot.out_direction, robot.out_error_x, robot.out_error_y, robot.out_angle, ball.angle);
+      // PRINT_BUFFER();
 
       Task10ms -= 10;
     }
@@ -275,64 +302,6 @@ int main(void)
       Task50ms -= 50;
     }
 
-    //* Out code
-    read_line_sensors(line_sensors); //? Update line_sensors array
-    robot.on_line_sensors = on_line_sensors_number(line_sensors);
-
-    if ((robot.on_line_sensors > 0 && robot.on_line_sensors < 10) && !robot.line_detect) //? At least one sensor detected line for the first time
-    {
-      robot.line_detect = true;
-      get_out_direction(line_sensors);
-      if (robot.brake_done > BRAKE_TIME_LIMIT)
-      {
-        robot.must_brake = true;
-      }
-    }
-    else if (robot.line_detect && robot.on_line_sensors > 1) //? At least 2 sensors see the line for gettting out error & out angle
-    {
-      get_edges(line_sensors, robot.out_direction, robot.out_edges);
-      get_out_direction_edge(line_sensors, robot.first_out_sensor);
-      get_out_error();
-
-      // if (robot.out_error > 4)
-      if (robot.out_error_x > 0)
-      {
-        robot.in_out = true;
-
-        //? Back inside
-        robot.move_angle = robot.out_angle - 180;
-        if (robot.move_angle < 0)
-        {
-          robot.move_angle += 360;
-        }
-        // robot.percent_speed = LINE_KP * robot.out_error;
-        robot.percent_speed = LINE_KP * robot.out_error_x;
-
-        //! Test
-        if (abs(robot.out_angle - ball.angle) > 75)
-        {
-          robot.in_out = false;
-          robot.out_detect = true;
-          robot.percent_speed = 0;
-          // robot.out_error_x = 0;
-        }
-      }
-      else
-      {
-        robot.percent_speed = 0;
-        robot.in_out = false;
-        // robot.out_error = 0;
-        robot.out_error_x = 0;
-        robot.out_detect = true;
-      }
-    }
-    else if (robot.line_detect && robot.on_line_sensors < 2)
-    {
-      robot.line_detect = false;
-      robot.out_direction = NOTHING;
-      robot.in_out = false;
-      robot.out_detect = true;
-    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

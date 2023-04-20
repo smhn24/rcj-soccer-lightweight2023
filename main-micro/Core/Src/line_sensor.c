@@ -48,7 +48,7 @@ uint8_t on_line_sensors_number(bool *line_sensors)
     return on_line_sensors;
 }
 
-void get_edges(bool *line_sensors, direction_t out_direction, uint8_t *out_edges)
+void get_edges(bool *line_sensors)
 {
     for (int8_t i = 0; i < 20; i++)
     {
@@ -202,7 +202,7 @@ void get_out_direction(bool *line_sensors)
     }
 }
 
-void get_out_direction_edge(bool *line_sensors, uint8_t first_sensor)
+void get_out_direction_edge(bool *line_sensors)
 {
     switch (robot.out_direction)
     {

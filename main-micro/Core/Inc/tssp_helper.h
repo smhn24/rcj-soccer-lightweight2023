@@ -31,7 +31,7 @@ typedef struct
     volatile int get_ball_offset;   //? Offset of Get ball
     volatile int max_value;         //? Value of the nearest robot sensor to the ball
     volatile uint8_t max_sensor;    //? Number of the nearest sensor to the ball
-    volatile uint8_t sensor_nember; //? Number of sensors that see the ball
+    volatile uint8_t sensor_number; //? Number of sensors that see the ball
     volatile direction_t direction; //? Direction of the ball according to the robot
 } BALL;
 

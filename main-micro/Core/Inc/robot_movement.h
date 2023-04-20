@@ -52,9 +52,12 @@
 
 typedef struct
 {
+    volatile float get_ball_percent_speed;
     volatile float percent_speed;
     volatile int angle;
     volatile int offset_angle;
+    volatile int get_ball_move_angle;
+    volatile int brake_move_angle;
     volatile int move_angle;
     volatile int out_angle;
     volatile uint16_t brake_done;  //? Brake timeout
@@ -65,8 +68,8 @@ typedef struct
     volatile int8_t out_error_x;
     volatile int8_t out_error_y;
     volatile direction_t out_direction;
-    volatile bool out_detect;  //? Robot detects out
-    volatile bool in_out;      //? Robot is in the out
+    volatile bool out_detect; //? Robot detects out
+    volatile bool in_out_area;
     volatile bool line_detect; //? Robot sees the line
     volatile bool must_brake;
 } Robot;
