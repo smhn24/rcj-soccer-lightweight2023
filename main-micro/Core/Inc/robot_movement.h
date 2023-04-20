@@ -54,21 +54,19 @@ typedef struct
 {
     volatile float get_ball_percent_speed;
     volatile float percent_speed;
-    volatile int angle;
-    volatile int offset_angle;
-    volatile int get_ball_move_angle;
-    volatile int brake_move_angle;
-    volatile int move_angle;
-    volatile int out_angle;
-    volatile uint16_t brake_done;  //? Brake timeout
-    volatile uint8_t out_edges[2]; //? NJL edges for out angle
+    volatile float njl_sum_x;
+    volatile float njl_sum_y;
+    volatile int16_t angle;
+    volatile int16_t get_ball_move_angle;
+    volatile int16_t brake_move_angle;
+    volatile int16_t move_angle;
+    volatile int16_t current_out_angle;
+    volatile int16_t first_out_angle;
+    volatile int16_t out_angle;
+    volatile int16_t invert_out_angle;
+    volatile uint16_t green_time; //? Brake timeout
     volatile uint8_t on_line_sensors;
     volatile uint8_t first_out_sensor;
-    volatile int8_t out_error;
-    volatile int8_t out_error_x;
-    volatile int8_t out_error_y;
-    volatile direction_t out_direction;
-    volatile bool out_detect; //? Robot detects out
     volatile bool in_out_area;
     volatile bool line_detect; //? Robot sees the line
     volatile bool must_brake;

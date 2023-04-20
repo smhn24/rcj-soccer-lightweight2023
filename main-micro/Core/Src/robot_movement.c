@@ -263,28 +263,12 @@ inline void get_ball(BALL *ball)
 void robot_brake(uint16_t time)
 {
     static uint16_t start_time = 0;
-    switch (robot.out_direction)
+    robot.brake_move_angle -= 180;
+    if (robot.brake_move_angle < 0)
     {
-    case W:
-        robot.brake_move_angle = 90;
-        break;
-    case E:
-        robot.brake_move_angle = 270;
-        break;
-    case N:
-        robot.brake_move_angle = 180;
-        break;
-    case S:
-        robot.brake_move_angle = 0;
-        break;
-    default:
-        robot.brake_move_angle -= 180;
-        if (robot.brake_move_angle < 0)
-        {
-            robot.brake_move_angle += 360;
-        }
-        break;
+        robot.brake_move_angle += 360;
     }
+
     if (start_time > time)
     {
         start_time = 0;

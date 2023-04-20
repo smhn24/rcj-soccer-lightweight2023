@@ -67,6 +67,14 @@ uint16_t width_temp[16][AVERAGE_DATA_NUMBER] = {0}; //? This array use for avara
 uint8_t tx_buff[100];                               //? Data to send with uart
 bool line_sensors[20] = {0};                        //? NJL sensors status that sees the line(1) or not(0)
 
+/*
+  0: 90, 1: 72, 2: 54, 3: 36, 4: 18, 5: 0, 6: 342, 7: 324, 8: 306, 9: 288, 10: 270
+  11: 252, 12: 234, 13: 216, 14: 198, 15: 180, 16: 162, 17: 144, 18: 126, 19: 108
+*/
+int16_t njl_angle[20] = {90, 72, 54, 36, 18, 0, 342, 324, 306, 288, 270, 252, 234, 216, 198, 180, 162, 144, 126, 108};
+float njl_x[20] = {1, 0.95, 0.81, 0.58, 0.31, 0, -0.31, -0.58, -0.81, -0.95, -1, -0.95, -0.81, -0.58, -0.31, 0, 0.31, 0.58, 0.81, 0.95};
+float njl_y[20] = {0, 0.31, 0.58, 0.81, 0.95, 1, 0.95, 0.81, 0.58, 0.31, 0, -0.31, -0.58, -0.81, -0.95, -1, -0.95, -0.81, -0.58, -0.31};
+
 //* Tasks *//
 volatile uint16_t Task1ms = 0, Task5ms = 0, Task10ms = 0, Task50ms = 0;
 /* USER CODE END PV */
@@ -180,93 +188,87 @@ int main(void)
     }
   }
 
-  MOTORS_ENABLE();
-  int temp_angle;
+  // MOTORS_ENABLE();
+
   while (1)
   {
     update_robot_angle();
     measure_ball_data(sensors, &ball);
     get_ball(&ball);
 
-    if (robot.in_out_area)
-    {
-      if (robot.line_detect && (robot.out_error_x > MAX_OUT_ERROR || robot.out_error_y > MAX_OUT_ERROR))
-      {
-        robot.move_angle = robot.out_angle - 180;
-        if (robot.move_angle < 0)
-        {
-          robot.move_angle += 360;
-        }
-        robot.percent_speed = LINE_KP * (robot.out_error_x + robot.out_error_y);
-      }
-      else if (robot.out_direction == E)
-      {
-        if (robot.get_ball_move_angle < 180)
-        {
-          robot.percent_speed = 0;
-          if (robot.get_ball_move_angle < 70)
-          {
-            robot.move_angle = 0;
-            robot.percent_speed = abs(cosf((robot.get_ball_move_angle + 20) * DEGREE_TO_RADIAN));
-          }
-          else if (robot.get_ball_move_angle > 110)
-          {
-            robot.move_angle = 180;
-            robot.percent_speed = abs(cosf((robot.get_ball_move_angle - 20) * DEGREE_TO_RADIAN));
-          }
-        }
-        else if (!robot.must_brake)
-        {
-          temp_angle = robot.move_angle;
-          robot.in_out_area = false;
-        }
-        else
-        {
-          robot.percent_speed = 0;
-        }
-      }
-
-      else
-      {
-        robot.percent_speed = 0;
-      }
-    }
-    else
-    {
-      robot.move_angle = robot.get_ball_move_angle;
-      robot.percent_speed = robot.get_ball_percent_speed;
-    }
-
-    sprintf(tx_buff, "eX: %d   eY: %d   io: %d   D: %d  mA: %d  get: %d   p: %d\r\n", robot.out_error_x, robot.out_error_y, robot.in_out_area, robot.out_direction, robot.move_angle, robot.get_ball_move_angle, robot.percent_speed);
-    PRINT_BUFFER();
     //* Out code
     read_line_sensors(line_sensors); //? Update line_sensors array
     robot.on_line_sensors = on_line_sensors_number(line_sensors);
 
-    //? Get out main direction
-    if (robot.on_line_sensors > 0 && !robot.line_detect)
+    if (robot.on_line_sensors > 0)
     {
-      get_out_direction(line_sensors);
-      robot.line_detect = true;
-      if (robot.brake_done > BRAKE_TIME_LIMIT)
+      // robot.out_angle = 0;
+      robot.njl_sum_x = robot.njl_sum_y = 0;
+      for (uint8_t i = 0; i < 20; i++)
       {
-        robot.must_brake = true;
+        if (line_sensors[i])
+        {
+          robot.njl_sum_x += njl_x[i];
+          robot.njl_sum_y += njl_y[i];
+        }
       }
-      robot.in_out_area = true;
-    }
-    else if (robot.on_line_sensors > 1)
-    {
-      get_edges(line_sensors);
-      get_out_direction_edge(line_sensors);
-      get_out_error();
-    }
 
-    else if (robot.on_line_sensors < 1)
+      if (!robot.line_detect)
+      {
+        for (uint8_t i = 0; i < 20; i++)
+        {
+          if (line_sensors[i] && robot.green_time > 500)
+          {
+            robot.first_out_sensor = i;
+            break;
+          }
+        }
+        robot.line_detect = true;
+        robot.in_out_area = true;
+      }
+
+      robot.current_out_angle = (int)(atan2f(robot.njl_sum_y, robot.njl_sum_x) * RADIAN_TO_DEGREE);
+      //? Convert grading system
+      robot.current_out_angle -= 90;
+      while (robot.current_out_angle < 0)
+        robot.current_out_angle += 360;
+      robot.current_out_angle *= -1;
+      robot.current_out_angle += 360;
+
+      robot.invert_out_angle = robot.current_out_angle - 180;
+      if (robot.invert_out_angle < 0)
+      {
+        robot.invert_out_angle += 360;
+      }
+
+      if (abs(robot.current_out_angle - njl_angle[robot.first_out_sensor]) < abs(robot.invert_out_angle - njl_angle[robot.first_out_sensor]))
+      {
+        robot.out_angle = robot.current_out_angle;
+      }
+      else
+      {
+        robot.out_angle = robot.invert_out_angle;
+      }
+      robot.move_angle = robot.out_angle - 180;
+      if (robot.move_angle < 0)
+      {
+        robot.move_angle += 360;
+      }
+      // robot.percent_speed = 0.5;
+      // robot.percent_speed = 0.7;
+      robot.percent_speed = 1;
+    }
+    else
     {
       robot.line_detect = false;
-      robot.out_error_x = 0;
-      robot.out_error_y = 0;
-      // TODO reset out direction
+      robot.percent_speed = 0;
+    }
+
+    if (!robot.line_detect && (!robot.in_out_area || abs(robot.out_angle - robot.get_ball_move_angle) > 90))
+    {
+      robot.in_out_area = false;
+      robot.move_angle = robot.get_ball_move_angle;
+      robot.percent_speed = robot.get_ball_percent_speed;
     }
 
     if (Task1ms > 0)
@@ -290,9 +292,17 @@ int main(void)
 
     if (Task10ms > 9)
     {
-      // sprintf(tx_buff, "N: %d   e0: %d   e1: %d  D: %d   A: %d\r\n", robot.on_line_sensors, robot.out_edges[0], robot.out_edges[1], robot.out_direction, robot.out_angle);
-      // sprintf(tx_buff, "ODir: %d  ErrX: %d   ErrY: %d  OAng: %d  BAng: %d\r\n", robot.out_direction, robot.out_error_x, robot.out_error_y, robot.out_angle, ball.angle);
+      // sprintf(tx_buff, "oAng: %d  FOS: %d  mA: %d  T: %d  N: %d\r\n", robot.out_angle, robot.first_out_sensor, robot.move_angle, robot.green_time, robot.on_line_sensors);
+      // sprintf(tx_buff, "Oa: %d    lD: %d   io: %d   MA: %d    FOS: %d  On: %d\r\n", robot.out_angle, robot.line_detect, robot.in_out_area, robot.move_angle, robot.first_out_sensor, robot.on_line_sensors);
       // PRINT_BUFFER();
+
+      for (uint8_t i = 0; i < 20; i++)
+      {
+        sprintf(tx_buff, "%d", line_sensors[i]);
+        HAL_UART_Transmit(&huart4, tx_buff, strlen(tx_buff), 100);
+      }
+      sprintf(tx_buff, "     %d   OA: %d\r\n", robot.on_line_sensors, robot.out_angle);
+      PRINT_BUFFER();
 
       Task10ms -= 10;
     }

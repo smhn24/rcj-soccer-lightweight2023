@@ -1,8 +1,10 @@
 #include <18F46K22.h>
 #device ADC = 8
-#FUSES NOWDT //! No Watch Dog Timer
+#FUSES NOMCLR,NOPUT,NOCPD,NOWRTD,NOEBTR,NOWRTB,NOWRT,NOWDT
+//!#FUSES NOWDT //! No Watch Dog Timer
+#use delay(clock=64000000, internal=16000000)
 
-#use delay(internal = 64mhz)
+//!#use delay(internal = 64mhz)
 
 #define b_high() output_high(PIN_c1)
 #define b_low() output_low(PIN_c1)
@@ -37,10 +39,17 @@ unsigned int8 ledc = 0;
 const unsigned int8 njl_channels[20] = {13, 11, 9, 8, 10, 12, 26, 25, 24, 19, 17, 23, 22, 21, 20, 4, 3, 2, 1, 0};
 int1 callibration_done = 0;
 int counter, counter_key = 0;
+unsigned int16 counter_4ms = 0;
 
 
 void check_sensors();
 void convert32to24(unsigned int32 value, unsigned int8 *msb, unsigned int8 *mid, unsigned int8 *lsb);
+
+#INT_TIMER1
+void timer1_interrupt()
+{
+   counter_4ms++;
+}
 
 #INT_SSP
 void ssp_interrupt()
@@ -69,32 +78,37 @@ void ssp_interrupt()
 
 void main()
 {
+//!   setup_wdt(WDT_32MS);
+   
    i2c_busy();
    set_analog_pins(PIN_A0, PIN_A1, PIN_A2, PIN_A3, PIN_A5, PIN_B0, PIN_B1, PIN_B2, PIN_B3, PIN_B4, PIN_B5, PIN_C5, PIN_C7, PIN_D0, PIN_D1, PIN_D2, PIN_D3, PIN_D4, PIN_D5, PIN_D6);
    setup_adc(ADC_CLOCK_DIV_64 | ADC_TAD_MUL_0);
+   setup_timer_1(T1_INTERNAL|T1_DIV_BY_1); //? 4ms
    enable_interrupts(global);
    enable_interrupts(INT_SSP);
-   delay_ms(500);
-
-   for (int j = 0; j < 3; j++)
-   {
+   enable_interrupts(INT_TIMER1);
+   
+//!   delay_ms(500);
+//!
+//!   for (int j = 0; j < 3; j++)
+//!   {
       f_high();
-      delay_ms(60);
-      l_high();
-      delay_ms(60);
-      b_high();
-      delay_ms(60);
-      r_high();
-      delay_ms(60);
+      delay_ms(15);
+//      l_high();
+
+//!      b_high();
+//!      delay_ms(60);
+//!      r_high();
+//!      delay_ms(60);
       f_low();
-      delay_ms(60);
-      l_low();
-      delay_ms(60);
-      b_low();
-      delay_ms(60);
-      r_low();
-      delay_ms(60);
-   }
+//!      delay_ms(60);
+//!      l_low();
+//!      delay_ms(60);
+//!      b_low();
+//!      delay_ms(60);
+//!      r_low();
+//!      delay_ms(60);
+//!   }
 
    for (int i = 0; i < 20; i++)
    {
@@ -107,9 +121,14 @@ void main()
    f_low();
    l_low();
    r_low();
-
+   
+   //setup_wdt(WDT_4MS);
+   
+   
+   
    while (True)
    {
+//!      restart_wdt();
 //!      if (callibrate_key()) // callibration
 //!      {
 //!         counter_key++;
@@ -132,6 +151,7 @@ void main()
       {
          while (callibrate_key())
          {
+//!            restart_wdt();
             for (int i = 0; i < 20; i++)
             {
                
@@ -141,6 +161,7 @@ void main()
          }
          while (!callibrate_key())
          {
+//!            restart_wdt();
             for (int i = 0; i < 20; i++)
             {
                set_adc_channel(njl_channels[i]);
@@ -162,8 +183,10 @@ void main()
          }
          for (int i = 0; i < 20; i++)
          {
+//!            restart_wdt();
 //!            threshold_values[i] = max_njl[i] - 40;
-            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 1.5) + min_njl[i];
+            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 4) + min_njl[i];
+//!            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 3) + min_njl[i];
 //!            threshold_values[i] = (float)max_njl[i] * 0.65 + (float)min_njl[i] * 0.35;
 //!            threshold_values[i] = (float)max_njl[i] * 0.5 + (float)min_njl[i] * 0.5;
             write_eeprom(i, threshold_values[i]);
@@ -203,6 +226,12 @@ void main()
       else
       {
          f_low();
+      }
+      
+      if (counter_4ms > 20)
+      {
+         r_toggle();
+         counter_4ms = 0;
       }
 //!      uint32_to_uint8(digital_value, data);
       convert32to24(digital_value, &data[0], &data[1], &data[2]);

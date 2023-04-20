@@ -661,14 +661,14 @@ void TIM7_IRQHandler(void)
   /* USER CODE BEGIN TIM7_IRQn 0 */
   if (robot.on_line_sensors == 0)
   {
-    if (robot.brake_done < 10000)
+    if (robot.green_time < 10000)
     {
-      robot.brake_done++;
+      robot.green_time++;
     }
   }
-  else
+  else if (robot.line_detect)
   {
-    robot.brake_done = 0;
+    robot.green_time = 0;
   }
 
   Task1ms++;

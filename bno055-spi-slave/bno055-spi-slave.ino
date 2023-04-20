@@ -2,6 +2,7 @@
 #include <SPI.h>
 
 #define GY_955_ADDRESS 0x29
+// #define GY_955_ADDRESS 0x28
 #define SS_PIN 10
 
 int angle = 0;
@@ -48,7 +49,7 @@ void setup() {
   process_it = false;
   delay(1000);
   bno055_config();
-  Serial.begin(115200);
+  // Serial.begin(115200);
 }
 
 // SPI interrupt routine
@@ -59,7 +60,7 @@ ISR(SPI_STC_vect) {
 
 void loop() {
   angle = bno055_read();
-  Serial.println(angle);
+  // Serial.println(angle);
   if (process_it) {
     if (received == 'L') {
       SPDR = lowByte(angle);
