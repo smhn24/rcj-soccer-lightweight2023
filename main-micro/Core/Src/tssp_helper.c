@@ -66,6 +66,15 @@ inline void measure_ball_data(TSSP sensors[16], BALL *ball)
     }
 
     ball->angle = (int)(atan2(ball->sigma_y, ball->sigma_x) * RADIAN_TO_DEGREE); // Get the angle & convert it from radian to degree
+    // ball->angle -= 90;
+    // if (ball->angle < -180)
+    // {
+    //     ball->angle += 360;
+    // }
+    // if (ball->angle > 180)
+    // {
+    //     ball->angle -= 360;
+    // }
     ball->angle -= 90;
     if (ball->angle < 0)
         ball->angle += 360;

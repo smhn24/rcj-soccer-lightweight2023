@@ -158,12 +158,13 @@ int pid_calculator(int error)
 
     error = abs(error) < 2 ? 0 : error;
 
-    if (error > 180 && error < 360)
-    {
-        error -= 360;
-    }
+    // if (error > 180 && error < 360)
+    // {
+    //     error -= 360;
+    // }
 
-    p = -error;
+    // p = -error;
+    p = error;
     sigma += p;
     if (p == 0)
     {
@@ -191,7 +192,6 @@ void robot_move(int angle, float percent_speed)
     int pid_value;
 
     pid_value = pid_calculator(robot.angle);
-    // pid_value = pid_calculator(BNO055_read());
 
     //* Add pid value to omni-directional
     m1 = -pid_value;
@@ -199,13 +199,31 @@ void robot_move(int angle, float percent_speed)
     m3 = pid_value;
     m4 = -pid_value;
 
+    if (angle > 180)
+    {
+        angle -= 360;
+    }
+    else if (angle < -180)
+    {
+        angle += 360;
+    }
+
+    angle *= -1;
+    if (angle < 0)
+    {
+        angle += 360;
+    }
+
     while (angle > 359)
     {
         angle -= 360;
     }
 
     while (angle < 0)
+    {
         angle += 360;
+    }
+
     angle /= 5;
 
     if (percent_speed > 1)
@@ -257,6 +275,12 @@ inline void get_ball(BALL *ball)
     {
         robot.get_ball_move_angle = 0;
         robot.get_ball_percent_speed = 0;
+    }
+
+    robot.get_ball_move_angle *= -1;
+    if (robot.get_ball_move_angle < -180)
+    {
+        robot.get_ball_move_angle += 360;
     }
 }
 

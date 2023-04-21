@@ -18,7 +18,8 @@
 #define MAX_DISTANCE 29.1 //? 11 + maxmimum distance
 // #define MAX_SPEED_PERCENT 0.8
 // #define MAX_SPEED_PERCENT 0.5
-#define MAX_SPEED_PERCENT 0.65
+// #define MAX_SPEED_PERCENT 0.65
+#define MAX_SPEED_PERCENT 0.7
 #define MAX_GET_BALL_SPEED_PERCENT 0.55
 // #define MAX_GET_BALL_SPEED_PERCENT 0.7
 // #define BRAKE_PERCENT_SPEED 0.6

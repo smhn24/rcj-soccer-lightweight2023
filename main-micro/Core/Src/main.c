@@ -67,13 +67,21 @@ uint16_t width_temp[16][AVERAGE_DATA_NUMBER] = {0}; //? This array use for avara
 uint8_t tx_buff[100];                               //? Data to send with uart
 bool line_sensors[20] = {0};                        //? NJL sensors status that sees the line(1) or not(0)
 
+float average_x = 0;
+float average_y = 0;
+
 /*
   0: 90, 1: 72, 2: 54, 3: 36, 4: 18, 5: 0, 6: 342, 7: 324, 8: 306, 9: 288, 10: 270
   11: 252, 12: 234, 13: 216, 14: 198, 15: 180, 16: 162, 17: 144, 18: 126, 19: 108
 */
-int16_t njl_angle[20] = {90, 72, 54, 36, 18, 0, 342, 324, 306, 288, 270, 252, 234, 216, 198, 180, 162, 144, 126, 108};
+// int16_t njl_angle[20] = {90, 72, 54, 36, 18, 0, 342, 324, 306, 288, 270, 252, 234, 216, 198, 180, 162, 144, 126, 108};
+int16_t njl_angle[20] = {0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342};
 float njl_x[20] = {1, 0.95, 0.81, 0.58, 0.31, 0, -0.31, -0.58, -0.81, -0.95, -1, -0.95, -0.81, -0.58, -0.31, 0, 0.31, 0.58, 0.81, 0.95};
 float njl_y[20] = {0, 0.31, 0.58, 0.81, 0.95, 1, 0.95, 0.81, 0.58, 0.31, 0, -0.31, -0.58, -0.81, -0.95, -1, -0.95, -0.81, -0.58, -0.31};
+bool status[20] = {0};
+
+uint8_t time_outed_sensor[20] = {255};
+uint8_t time_outed_sensor_index = 0;
 
 //* Tasks *//
 volatile uint16_t Task1ms = 0, Task5ms = 0, Task10ms = 0, Task50ms = 0;
@@ -103,6 +111,12 @@ void update_robot_angle()
   if (angle >= 360)
   {
     angle = 0;
+  }
+
+  angle *= -1;
+  if (angle < -180)
+  {
+    angle += 360;
   }
 
   if (abs(angle - robot.angle) < 15 || ignore)
@@ -188,7 +202,7 @@ int main(void)
     }
   }
 
-  // MOTORS_ENABLE();
+  MOTORS_ENABLE();
 
   while (1)
   {
@@ -200,19 +214,227 @@ int main(void)
     read_line_sensors(line_sensors); //? Update line_sensors array
     robot.on_line_sensors = on_line_sensors_number(line_sensors);
 
+    float angle_x[20] = {0}, angle_y[20] = {0};
+    bool special_status = false, end_sensor_neighbor = false;
+    uint8_t neighbor_sensor_number = 0, neighbor_counter = 0;
+    int16_t average_neighbor_angle[20] = {0};
+    uint8_t start = 0, end = 21, temp = 0;
+
+    average_x = 0;
+    average_y = 0;
+
     if (robot.on_line_sensors > 0)
     {
-      // robot.out_angle = 0;
-      robot.njl_sum_x = robot.njl_sum_y = 0;
       for (uint8_t i = 0; i < 20; i++)
       {
         if (line_sensors[i])
         {
-          robot.njl_sum_x += njl_x[i];
-          robot.njl_sum_y += njl_y[i];
+          if (!status[i])
+          {
+            time_outed_sensor[time_outed_sensor_index] = i;
+            time_outed_sensor_index++;
+          }
+          status[i] = true;
         }
       }
 
+      if (line_sensors[0] && line_sensors[19])
+      {
+        special_status = true;
+      }
+
+      while (special_status)
+      {
+        if (line_sensors[temp])
+        {
+          angle_x[neighbor_counter] += njl_x[temp];
+          angle_y[neighbor_counter] += njl_y[temp];
+          neighbor_sensor_number++;
+          temp++;
+          start++;
+
+          if (temp > 19)
+          {
+            break;
+          }
+        }
+        else
+        {
+          break;
+        }
+      }
+      temp = 19;
+      while (special_status)
+      {
+        if (line_sensors[temp])
+        {
+          angle_x[neighbor_counter] += njl_x[temp];
+          angle_y[neighbor_counter] += njl_y[temp];
+          neighbor_sensor_number++;
+          temp--;
+          end--;
+
+          if (temp < 1)
+          {
+            break;
+          }
+        }
+        else
+        {
+          break;
+        }
+      }
+
+      if (special_status)
+      {
+        end = 20;
+        angle_x[neighbor_counter] /= neighbor_sensor_number;
+        angle_y[neighbor_counter] /= neighbor_sensor_number;
+        neighbor_counter++;
+        neighbor_sensor_number = 0;
+      }
+
+      bool brk = 0;
+
+      for (uint8_t i = start; i < end; i++)
+      {
+        if (i == 20)
+        {
+          i = 0;
+          brk = 1;
+        }
+        if (line_sensors[i])
+        {
+          angle_x[neighbor_counter] += njl_x[i];
+          angle_y[neighbor_counter] += njl_y[i];
+          neighbor_sensor_number++;
+        }
+        else if (neighbor_sensor_number > 0)
+        {
+          angle_x[neighbor_counter] /= neighbor_sensor_number;
+          angle_y[neighbor_counter] /= neighbor_sensor_number;
+
+          neighbor_counter++;
+          neighbor_sensor_number = 0;
+        }
+
+        if (brk)
+          break;
+      }
+
+      for (uint8_t i = 0; i < neighbor_counter; i++)
+      {
+        average_x += angle_x[i];
+        average_y += angle_y[i];
+      }
+
+      if (average_x == 0)
+      {
+        if (average_y == 0)
+        {
+          robot.current_out_angle = njl_angle[time_outed_sensor[0]];
+        }
+        else if (average_y < 0)
+        {
+          robot.current_out_angle = -90;
+        }
+        else
+        {
+          robot.current_out_angle = 90;
+        }
+      }
+      else
+      {
+        robot.current_out_angle = (int)(atan2f(average_y, average_x) * RADIAN_TO_DEGREE);
+      }
+
+      if (robot.current_out_angle < 0)
+      {
+        robot.current_out_angle += 360;
+      }
+
+      robot.invert_out_angle = robot.current_out_angle - 180;
+      if (robot.invert_out_angle < 0)
+      {
+        robot.invert_out_angle += 360;
+      }
+      else if (robot.invert_out_angle > 359)
+      {
+        robot.invert_out_angle -= 360;
+      }
+
+      int16_t min = 360, min_index = 19;
+      for (uint8_t i = 0; i < 20; i++)
+      {
+        if (abs(njl_angle[i] - robot.current_out_angle) < min)
+        {
+          min = abs(njl_angle[i] - robot.current_out_angle);
+          min_index = i;
+        }
+      }
+      if (status[min_index])
+      {
+        uint8_t index = min_index + 10;
+        if (index > 19)
+        {
+          index -= 20;
+        }
+
+        if (status[index])
+        {
+          for (uint8_t i = 0; i < 20; i++)
+          {
+            if (time_outed_sensor[i] == min_index)
+            {
+              robot.out_angle = robot.current_out_angle;
+              break;
+            }
+            else if (time_outed_sensor[i] == index)
+            {
+              robot.out_angle = robot.invert_out_angle;
+              break;
+            }
+          }
+        }
+        else
+        {
+          robot.out_angle = robot.current_out_angle;
+        }
+      }
+      else
+      {
+        robot.out_angle = robot.invert_out_angle;
+      }
+
+      //? Convert grading system
+      robot.out_angle -= 90;
+      if (robot.out_angle < -180)
+      {
+        robot.out_angle += 360;
+      }
+      else if (robot.out_angle > 180)
+      {
+        robot.out_angle -= 360;
+      }
+
+      // for (uint8_t i = 0; i < 20; i++)
+      // {
+      //   sprintf(tx_buff, "%d", line_sensors[i]);
+      //   // sprintf(tx_buff, "%d", status[i]);
+      //   HAL_UART_Transmit(&huart4, tx_buff, strlen(tx_buff), 100);
+      // }
+      // sprintf(tx_buff, "   nc: %d   OA: %d  CA: %d  IA: %d  Ax: %.2f   Ay: %.2f\r\n", neighbor_counter, robot.out_angle, robot.current_out_angle, robot.invert_out_angle, average_x, average_y);
+      sprintf(tx_buff, "Get: %d\r\n", robot.get_ball_move_angle);
+      // // HAL_UART_Transmit(&huart4, tx_buff, strlen(tx_buff), 100);
+      PRINT_BUFFER();
+
+      // sprintf(tx_buff, "RA: %d\r\n", robot.angle);
+      // PRINT_BUFFER();
+
+      // sprintf(tx_buff, "nc: %d   %d,%d,%d,%d\r\n", neighbor_counter, average_neighbor_angle[0], average_neighbor_angle[1], average_neighbor_angle[2], average_neighbor_angle[3]);
+      // PRINT_BUFFER();
+
+      ///////////////////////////////////////////////////////////////////////
       if (!robot.line_detect)
       {
         for (uint8_t i = 0; i < 20; i++)
@@ -227,41 +449,30 @@ int main(void)
         robot.in_out_area = true;
       }
 
-      robot.current_out_angle = (int)(atan2f(robot.njl_sum_y, robot.njl_sum_x) * RADIAN_TO_DEGREE);
-      //? Convert grading system
-      robot.current_out_angle -= 90;
-      while (robot.current_out_angle < 0)
-        robot.current_out_angle += 360;
-      robot.current_out_angle *= -1;
-      robot.current_out_angle += 360;
-
-      robot.invert_out_angle = robot.current_out_angle - 180;
-      if (robot.invert_out_angle < 0)
-      {
-        robot.invert_out_angle += 360;
-      }
-
-      if (abs(robot.current_out_angle - njl_angle[robot.first_out_sensor]) < abs(robot.invert_out_angle - njl_angle[robot.first_out_sensor]))
-      {
-        robot.out_angle = robot.current_out_angle;
-      }
-      else
-      {
-        robot.out_angle = robot.invert_out_angle;
-      }
       robot.move_angle = robot.out_angle - 180;
       if (robot.move_angle < 0)
       {
         robot.move_angle += 360;
       }
-      // robot.percent_speed = 0.5;
+      // robot.percent_speed = 0.3;
+      robot.percent_speed = 0.6;
       // robot.percent_speed = 0.7;
-      robot.percent_speed = 1;
+      // robot.percent_speed = 1;
     }
     else
     {
       robot.line_detect = false;
       robot.percent_speed = 0;
+
+      if (robot.green_time > 200)
+      {
+        for (uint8_t i = 0; i < 20; i++)
+        {
+          time_outed_sensor[i] = 255;
+          time_outed_sensor_index = 0;
+          status[i] = false;
+        }
+      }
     }
 
     if (!robot.line_detect && (!robot.in_out_area || abs(robot.out_angle - robot.get_ball_move_angle) > 90))
@@ -292,18 +503,6 @@ int main(void)
 
     if (Task10ms > 9)
     {
-      // sprintf(tx_buff, "oAng: %d  FOS: %d  mA: %d  T: %d  N: %d\r\n", robot.out_angle, robot.first_out_sensor, robot.move_angle, robot.green_time, robot.on_line_sensors);
-      // sprintf(tx_buff, "Oa: %d    lD: %d   io: %d   MA: %d    FOS: %d  On: %d\r\n", robot.out_angle, robot.line_detect, robot.in_out_area, robot.move_angle, robot.first_out_sensor, robot.on_line_sensors);
-      // PRINT_BUFFER();
-
-      for (uint8_t i = 0; i < 20; i++)
-      {
-        sprintf(tx_buff, "%d", line_sensors[i]);
-        HAL_UART_Transmit(&huart4, tx_buff, strlen(tx_buff), 100);
-      }
-      sprintf(tx_buff, "     %d   OA: %d\r\n", robot.on_line_sensors, robot.out_angle);
-      PRINT_BUFFER();
-
       Task10ms -= 10;
     }
 
@@ -311,7 +510,6 @@ int main(void)
     {
       Task50ms -= 50;
     }
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
