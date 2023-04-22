@@ -8,7 +8,11 @@
 int angle = 0;
 volatile byte received;
 volatile bool process_it = false;
-uint8_t counter = 123;
+// uint8_t counter = 123;
+
+volatile  uint32_t elapsed_time = 0;
+
+
 
 void bno055_config() {
   Wire.begin();
@@ -43,6 +47,7 @@ int bno055_read() {
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(4, OUTPUT);
   pinMode(MISO, OUTPUT);
   SPCR = (1 << SPE) | (1 << SPIE);
   sei();
@@ -69,4 +74,18 @@ void loop() {
     }
     process_it = false;
   }
+
+
+  elapsed_time++;
+  if (elapsed_time > 500)
+  {
+    digitalWrite(4, !digitalRead(4));
+    elapsed_time = 0;
+  }
+
+  // if (millis() - elapsed_time > 499)
+  // {
+  //   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+  //   elapsed_time = millis();
+  // }
 }

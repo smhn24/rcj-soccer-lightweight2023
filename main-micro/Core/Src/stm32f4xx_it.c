@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "tssp_helper.h"
 #include "robot_movement.h"
+#include "keys.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,8 +48,8 @@
 extern Robot robot;
 extern TSSP sensors[16];
 extern uint16_t width_temp[16][AVERAGE_DATA_NUMBER];
-extern uint16_t Task1ms, Task5ms, Task10ms, Task50ms;
-// extern uint8_t Task5ms;
+extern uint16_t Task1ms, Task4ms, Task10ms, Task50ms;
+// extern uint8_t Task4ms;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -103,12 +104,17 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
   TurnOnLED();
+  uint32_t *pSHCSR = (uint32_t *)0xE000ED24;
+  *pSHCSR &= ~(1 << 0);
+  *pSHCSR &= ~(1 << 16);
+  *pSHCSR &= ~(1 << 17);
+  *pSHCSR &= ~(1 << 18);
   /* USER CODE END HardFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-    /* USER CODE END W1_HardFault_IRQn 0 */
-  }
+  // while (1)
+  // {
+  /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+  /* USER CODE END W1_HardFault_IRQn 0 */
+  // }
 }
 
 /**
@@ -671,8 +677,14 @@ void TIM7_IRQHandler(void)
     robot.green_time = 0;
   }
 
+  robot.camera_connection = (robot.camera_refresh_time < 1000) ? true : false;
+  if (robot.camera_refresh_time < 10000)
+  {
+    robot.camera_refresh_time++;
+  }
+
   Task1ms++;
-  Task5ms++;
+  Task4ms++;
   Task10ms++;
   Task50ms++;
   /* USER CODE END TIM7_IRQn 0 */

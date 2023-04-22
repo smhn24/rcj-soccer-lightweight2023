@@ -31,6 +31,13 @@ typedef enum __attribute__((packed)) _direction
     NOTHING = 8,
 } direction_t;
 
+typedef enum __attribute__((packed)) _robot_role
+{
+    goal_keeper = 0,
+    attacker = 1,
+} robot_role_t;
+
 void start_timers();
+void uart_error_handler();
 
 #endif

@@ -1,4 +1,10 @@
 #include "helpers.h"
+#include "camera.h"
+#include "robot_movement.h"
+
+extern Robot robot;
+extern uint8_t openmv_data[OPENMV_DATA_LENGTH];
+// extern uint8_t pixycam_data[PIXYCAM_DATA_LENGTH];
 
 void start_timers()
 {
@@ -38,4 +44,21 @@ void start_timers()
 
     HAL_TIM_Base_Start_IT(&htim4); //? Start timer for checkout tssp pulses
     HAL_TIM_Base_Start_IT(&htim7); //? Timer for timing of tasks, brake,... with 1ms overflow and 1us counter
+}
+
+void uart_error_handler()
+{
+    if (UART5->SR & 0x0000000A) //? Error check
+    {
+        UART5->DR;
+        UART5->SR &= ~(0x000003E0);
+        if (robot.role == attacker)
+        {
+            HAL_UART_Receive_DMA(&huart5, openmv_data, OPENMV_DATA_LENGTH);
+        }
+        // else
+        // {
+        //     HAL_UART_Receive_DMA(&huart5, pixycam_data, PIXYCAM_DATA_LENGTH);
+        // }
+    }
 }

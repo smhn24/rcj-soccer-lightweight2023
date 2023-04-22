@@ -185,7 +185,8 @@ void main()
          {
 //!            restart_wdt();
 //!            threshold_values[i] = max_njl[i] - 40;
-            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 4) + min_njl[i];
+//!            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 4) + min_njl[i];
+            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 8) + min_njl[i];
 //!            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 3) + min_njl[i];
 //!            threshold_values[i] = (float)max_njl[i] * 0.65 + (float)min_njl[i] * 0.35;
 //!            threshold_values[i] = (float)max_njl[i] * 0.5 + (float)min_njl[i] * 0.5;

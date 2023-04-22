@@ -186,12 +186,14 @@ int pid_calculator(int error)
     return pid;
 }
 
+extern float HeadPID_Out;
 void robot_move(int angle, float percent_speed)
 {
     int m1 = 0, m2 = 0, m3 = 0, m4 = 0; //? motors value
     int pid_value;
 
-    pid_value = pid_calculator(robot.angle);
+    pid_value = HeadPID_Out;
+    // pid_value = pid_calculator(robot.angle);
 
     //* Add pid value to omni-directional
     m1 = -pid_value;

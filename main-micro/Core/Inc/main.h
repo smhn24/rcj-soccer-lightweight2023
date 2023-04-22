@@ -73,6 +73,8 @@ void Error_Handler(void);
 #define LED_GPIO_Port GPIOC
 #define StartKey_Pin LL_GPIO_PIN_15
 #define StartKey_GPIO_Port GPIOC
+#define ROBOT_ROLE_Pin LL_GPIO_PIN_2
+#define ROBOT_ROLE_GPIO_Port GPIOC
 #define TSSP5_Pin LL_GPIO_PIN_0
 #define TSSP5_GPIO_Port GPIOA
 #define TSSP10_Pin LL_GPIO_PIN_1

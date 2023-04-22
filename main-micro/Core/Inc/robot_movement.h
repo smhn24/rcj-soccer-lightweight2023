@@ -9,30 +9,30 @@
 #include "bno055.h"
 #include "line_sensor.h"
 
-// #define MAX_VELOCITY 2800
 #define MAX_VELOCITY 100
 #define MAX_PWM_VALUE 2800
 #define GET_BALL_DISTANCE 10
 #define LEFT_TOLERANCE_ANGLE 335
 #define RIGHT_TOLERANCE_ANGLE 25
 #define MAX_DISTANCE 29.1 //? 11 + maxmimum distance
-// #define MAX_SPEED_PERCENT 0.8
-// #define MAX_SPEED_PERCENT 0.5
-// #define MAX_SPEED_PERCENT 0.65
-#define MAX_SPEED_PERCENT 0.7
-#define MAX_GET_BALL_SPEED_PERCENT 0.55
-// #define MAX_GET_BALL_SPEED_PERCENT 0.7
-// #define BRAKE_PERCENT_SPEED 0.6
-#define BRAKE_PERCENT_SPEED 1
-// #define BRAKE_PERCENT_SPEED 0.85
+// #define MAX_SPEED_PERCENT 0.7
+// #define MAX_SPEED_PERCENT 0.85
+#define MAX_SPEED_PERCENT (robot.role == attacker ? 0.7 : 0.8)
+// #define MAX_GET_BALL_SPEED_PERCENT 0.55
+#define MAX_GET_BALL_SPEED_PERCENT (robot.role == attacker ? 0.55 : 0.75)
+#define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
 #define MIN_VERTICAL_DISTANCE 12
-#define BRAKE_TIME_LIMIT 300
-// #define BRAKE_TIME_LIMIT 100
 
-// #define KP 0.85
+#define HEAD_PID_I_MAX 10
+#define HEAD_PID_MAX 50
+// #define HEAD_KI 0.03
+#define HEAD_KI (robot.role == attacker ? 0.2 : 0.3)
+// #define HEAD_KP 1.0
+#define HEAD_KP (robot.role == attacker ? 0.9 : 1.3)
+#define HEAD_KD 0.0
+
 #define KP 0.65
-#define KI 0.005
-// #define KD 6
+#define KI 0.0
 #define KD 0.05
 
 #define MOTORS_ENABLE() LL_GPIO_SetOutputPin(MOTORS_ENABLE_GPIO_Port, MOTORS_ENABLE_Pin)
@@ -53,11 +53,13 @@
 
 typedef struct
 {
+    volatile robot_role_t role;
     volatile float get_ball_percent_speed;
     volatile float percent_speed;
     volatile float njl_sum_x;
     volatile float njl_sum_y;
     volatile int16_t angle;
+    volatile int16_t head_angle;
     volatile int16_t get_ball_move_angle;
     volatile int16_t brake_move_angle;
     volatile int16_t move_angle;
@@ -66,11 +68,13 @@ typedef struct
     volatile int16_t out_angle;
     volatile int16_t invert_out_angle;
     volatile uint16_t green_time; //? Brake timeout
+    volatile uint16_t camera_refresh_time;
     volatile uint8_t on_line_sensors;
     volatile uint8_t first_out_sensor;
     volatile bool in_out_area;
     volatile bool line_detect; //? Robot sees the line
     volatile bool must_brake;
+    volatile bool camera_connection;
 } Robot;
 
 void get_ball(BALL *ball);

@@ -61,7 +61,7 @@ void MX_GPIO_Init(void)
   LL_GPIO_ResetOutputPin(GPIOB, MOTOR3_DIRECTION_Pin|MOTOR4_DIRECTION_Pin|MOTOR1_DIRECTION_Pin);
 
   /**/
-  GPIO_InitStruct.Pin = Key_Pin|StartKey_Pin;
+  GPIO_InitStruct.Pin = Key_Pin|StartKey_Pin|ROBOT_ROLE_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(GPIOC, &GPIO_InitStruct);

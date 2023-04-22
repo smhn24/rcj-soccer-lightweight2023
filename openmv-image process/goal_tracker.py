@@ -1,5 +1,7 @@
 import sensor, image, time
 
+from machine import UART
+
 class GoalRect():
     def __init__(self, x, y, width, height, color):
         self.x = x
@@ -11,11 +13,14 @@ class GoalRect():
 
 thresholds = [
     (36, 70, -128, 31, 40, 70), # Yellow -> code = 1
-    (12, 17, -3, 15, -35, -16)  # Blue -> code = 2
+    #(12, 17, -3, 15, -35, -16)  # Blue -> code = 2
+    (15, 35, 10, 45, -85, -30)
 ]
 
 blobs = []
 goal_rects = []
+
+uart = UART(3, 115200)
 
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565)
@@ -43,11 +48,31 @@ while(True):
             img.draw_string(blob.x() + 2, blob.y() + 2, "blue")
             goal_rects.append(GoalRect(x=blob.cx(), y=blob.cy(), width=blob.w(), height=blob.h(), color='Blue'))
 
-
+    try:
+        goal = goal_rects[0]
+    except:
+        goal = GoalRect(x=0, y=0, width=0, height=0, color='')
     for rect in goal_rects:
-        print(f'{rect.width}')
+        if rect.width > goal.width:
+            goal = rect
+        #print(f'{rect.width}')
         #print(f'Length: {120 - rect.y}   Width: {rect.x - 80}')
         #print(rect.x)
+
+    #goal_length = 120 - goal.y
+
+    if goal.width != 0:
+        goal_length = 160-goal.width
+        goal_width = goal.x-80
+
+    else:
+        goal_length = 0
+        goal_width = 0
+
+    #print(f'Length: {goal_length}   Width: {goal_width}')
+
+    uart.write(f'/{goal_width:04},{goal_length:03}')
+    #print(f'/{goal_width:04},{goal_length:03}')
 
 
     if len(blobs) == 0:
@@ -61,28 +86,3 @@ while(True):
     #print(clock.fps())
 
     goal_rects.clear()
-
-
-
-#def goal_merger(rects):
-    #if len(rects) == 1:
-        #return rects[0]
-
-    #if rects[0].x > rects[1].x:
-        #left = rects[0]
-        #right = rects[1]
-    #else:
-        #left = rects[1]
-        #right = rects[0]
-
-    #cx = (left.x + (left.w / 2) + right.x - (right.width / 2)) / 2
-    #cy = left.y
-
-    #w = left.x - rigth.x
-    #h = left.height
-
-    #return GoalRect(cx, cy, w, h, left.color)
-
-
-
-
