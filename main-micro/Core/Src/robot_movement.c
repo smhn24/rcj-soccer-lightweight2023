@@ -319,8 +319,9 @@ void update_head_angle()
         {
             sum_i = HEAD_ROTATION_I_MAX;
         }
-        robot.head_angle = -(goal.width) * HEAD_ROTATION_KP;
+        robot.head_angle = -goal.width * HEAD_ROTATION_KP;
         robot.head_angle += sum_i * HEAD_ROTATION_KI;
+        // robot.head_angle = -goal.width;
     }
     else
     {

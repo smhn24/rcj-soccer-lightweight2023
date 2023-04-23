@@ -556,7 +556,7 @@ int main(void)
       }
     }
 
-    if (!robot.line_detect && (!robot.in_out_area || abs(robot.out_angle - robot.get_ball_move_angle) > 45))
+    if (!robot.line_detect && (!robot.in_out_area || abs(robot.out_angle - robot.get_ball_move_angle) > 30))
     {
       robot.in_out_area = false;
       robot.move_angle = robot.get_ball_move_angle;
@@ -575,7 +575,7 @@ int main(void)
       int16_t GyroZ = Read_MPU6050();
       GyroZ_Filtered = (GyroZ_Filtered * 0.70) + (((float)GyroZ / 65.5) * 0.30);
 
-      // Head PID
+      //? Head PID
       float HeadPID_Setpoint = -robot.angle + robot.head_angle;
       float HeadPIDError;
       HeadPIDError = -HeadPID_Setpoint;
@@ -611,24 +611,15 @@ int main(void)
 
     if (Task10ms > 9)
     {
-      // if (robot.captured_ball)
-      // {
-      //   update_head_angle();
-      // }
-      // else
-      // {
-      //   robot.head_angle = 0;
-      // }
-      update_head_angle();
-
-      if (robot.role == attacker)
+      if (robot.captured_ball)
       {
-        // read_openmv();
+        update_head_angle();
       }
       else
       {
-        // read_pixy();
+        robot.head_angle = 0;
       }
+      // update_head_angle();
       // sprintf(tx_buff, "L: %d   B: %d   R: %d\r\n", left_srf.width, back_srf.width, right_srf.width);
       // PRINT_BUFFER();
 

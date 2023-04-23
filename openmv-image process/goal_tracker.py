@@ -56,15 +56,20 @@ while(True):
     else:
         goal = GoalRect(x=0, y=0, width=0, height=0, color='')
 
-        #print(f'{rect.width}')
-        #print(f'Length: {120 - rect.y}   Width: {rect.x - 80}')
-        #print(rect.x)
+    #print(f'{rect.width}')
+    #print(f'Length: {120 - rect.y}   Width: {rect.x - 80}')
+    #print(rect.x)
 
     #goal_length = 120 - goal.y
 
     if goal.width != 0:
         goal_length = 160-goal.width
         goal_width = goal.x-80
+
+        if goal_width < 0:
+            goal_width -= int(goal.width/4)
+        elif goal_width > 0:
+            goal_width += int(goal_width/4)
 
     else:
         goal_length = 0
