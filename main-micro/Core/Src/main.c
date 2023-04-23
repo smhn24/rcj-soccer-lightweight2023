@@ -42,6 +42,7 @@
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "camera.h"
+#include "srf_helper.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -63,6 +64,7 @@
 
 /* USER CODE BEGIN PV */
 volatile TSSP sensors[16];
+volatile SRF left_srf, right_srf, back_srf;
 volatile BALL ball;
 GOAL goal;
 Robot robot;
@@ -86,8 +88,6 @@ float njl_y[20] = {0, 0.31, 0.58, 0.81, 0.95, 1, 0.95, 0.81, 0.58, 0.31, 0, -0.3
 
 bool status[20] = {0};
 
-uint16_t debug_counter = 0; //! debug
-
 uint8_t openmv_data[OPENMV_DATA_LENGTH] = {0};
 // uint8_t pixycam_data[PIXYCAM_DATA_LENGTH] = {0};
 
@@ -102,7 +102,7 @@ uint8_t ReadBNOStatus = 0;
 uint8_t BNO_lsb, BNO_msb;
 
 //* Tasks *//
-volatile uint16_t Task1ms = 0, Task4ms = 0, Task10ms = 0, Task50ms = 0;
+volatile uint16_t Task1ms = 0, Task4ms = 0, Task10ms = 0, Task25ms = 0, Task50ms = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -241,6 +241,7 @@ int main(void)
   MX_TIM7_Init();
   MX_UART5_Init();
   MX_SPI1_Init();
+  MX_TIM13_Init();
   /* USER CODE BEGIN 2 */
   robot.role = attacker;
   // if (ROLE_STATUS())
@@ -271,13 +272,12 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  // TurnOnLED();
+  TurnOnLED();
   MOTORS_DISABLE();
 
   //! Wait to start the task
   while (1)
   {
-    ToggleLED();
     if (START_KEY_STATUS())
     {
       LL_mDelay(5);
@@ -288,7 +288,6 @@ int main(void)
       TurnOffLED();
       break;
     }
-    HAL_Delay(150);
   }
 
   MOTORS_ENABLE();
@@ -298,7 +297,7 @@ int main(void)
     uart_error_handler();
 
     measure_ball_data(sensors, &ball);
-    // get_ball(&ball);
+    get_ball(&ball);
 
     if (CAPTURED_BALL_STATUS())
     {
@@ -314,250 +313,250 @@ int main(void)
     read_line_sensors(line_sensors); //? Update line_sensors array
     robot.on_line_sensors = on_line_sensors_number(line_sensors);
 
-    // bool special_status = false, end_sensor_neighbor = false;
-    // uint8_t neighbor_sensor_number = 0, neighbor_counter = 0;
-    // int16_t average_neighbor_angle[20] = {0};
-    // uint8_t start = 0, end = 21, temp = 0;
+    bool special_status = false, end_sensor_neighbor = false;
+    uint8_t neighbor_sensor_number = 0, neighbor_counter = 0;
+    int16_t average_neighbor_angle[20] = {0};
+    uint8_t start = 0, end = 21, temp = 0;
 
-    // if (robot.on_line_sensors > 0)
-    // {
-    // average_x = 0;
-    // average_y = 0;
-    // for(uint8_t i=0; i<20;i++)
-    // {
-    //   angle_x[i] = 0;
-    //   angle_y[i] = 0;
-    // }
-    //   for (uint8_t i = 0; i < 20; i++)
-    //   {
-    //     if (line_sensors[i])
-    //     {
-    //       if (!status[i])
-    //       {
-    //         time_outed_sensor[time_outed_sensor_index] = i;
-    //         time_outed_sensor_index++;
-    //       }
-    //       status[i] = true;
-    //     }
-    //   }
+    if (robot.on_line_sensors > 0)
+    {
+      average_x = 0;
+      average_y = 0;
+      for (uint8_t i = 0; i < 20; i++)
+      {
+        angle_x[i] = 0;
+        angle_y[i] = 0;
+      }
+      for (uint8_t i = 0; i < 20; i++)
+      {
+        if (line_sensors[i])
+        {
+          if (!status[i])
+          {
+            time_outed_sensor[time_outed_sensor_index] = i;
+            time_outed_sensor_index++;
+          }
+          status[i] = true;
+        }
+      }
 
-    //   if (line_sensors[0] && line_sensors[19])
-    //   {
-    //     special_status = true;
-    //   }
+      if (line_sensors[0] && line_sensors[19])
+      {
+        special_status = true;
+      }
 
-    //   while (special_status)
-    //   {
-    //     if (line_sensors[temp])
-    //     {
-    //       angle_x[neighbor_counter] += njl_x[temp];
-    //       angle_y[neighbor_counter] += njl_y[temp];
-    //       neighbor_sensor_number++;
-    //       temp++;
-    //       start++;
+      while (special_status)
+      {
+        if (line_sensors[temp])
+        {
+          angle_x[neighbor_counter] += njl_x[temp];
+          angle_y[neighbor_counter] += njl_y[temp];
+          neighbor_sensor_number++;
+          temp++;
+          start++;
 
-    //       if (temp > 19)
-    //       {
-    //         break;
-    //       }
-    //     }
-    //     else
-    //     {
-    //       break;
-    //     }
-    //   }
-    //   temp = 19;
-    //   while (special_status)
-    //   {
-    //     if (line_sensors[temp])
-    //     {
-    //       angle_x[neighbor_counter] += njl_x[temp];
-    //       angle_y[neighbor_counter] += njl_y[temp];
-    //       neighbor_sensor_number++;
-    //       temp--;
-    //       end--;
+          if (temp > 19)
+          {
+            break;
+          }
+        }
+        else
+        {
+          break;
+        }
+      }
+      temp = 19;
+      while (special_status)
+      {
+        if (line_sensors[temp])
+        {
+          angle_x[neighbor_counter] += njl_x[temp];
+          angle_y[neighbor_counter] += njl_y[temp];
+          neighbor_sensor_number++;
+          temp--;
+          end--;
 
-    //       if (temp < 1)
-    //       {
-    //         break;
-    //       }
-    //     }
-    //     else
-    //     {
-    //       break;
-    //     }
-    //   }
+          if (temp < 1)
+          {
+            break;
+          }
+        }
+        else
+        {
+          break;
+        }
+      }
 
-    //   if (special_status)
-    //   {
-    //     // end = 20;
-    //     angle_x[neighbor_counter] /= neighbor_sensor_number;
-    //     angle_y[neighbor_counter] /= neighbor_sensor_number;
-    //     neighbor_counter++;
-    //     neighbor_sensor_number = 0;
-    //   }
+      if (special_status)
+      {
+        // end = 20;
+        angle_x[neighbor_counter] /= neighbor_sensor_number;
+        angle_y[neighbor_counter] /= neighbor_sensor_number;
+        neighbor_counter++;
+        neighbor_sensor_number = 0;
+      }
 
-    //   bool brk = 0;
+      bool brk = 0;
 
-    //   for (uint8_t i = start; i < end; i++)
-    //   {
-    //     if (i == 20)
-    //     {
-    //       i = 0;
-    //       brk = 1;
-    //     }
-    //     if (line_sensors[i])
-    //     {
-    //       angle_x[neighbor_counter] += njl_x[i];
-    //       angle_y[neighbor_counter] += njl_y[i];
-    //       neighbor_sensor_number++;
-    //     }
-    //     else if (neighbor_sensor_number > 0)
-    //     {
-    //       angle_x[neighbor_counter] /= neighbor_sensor_number;
-    //       angle_y[neighbor_counter] /= neighbor_sensor_number;
+      for (uint8_t i = start; i < end; i++)
+      {
+        if (i == 20)
+        {
+          i = 0;
+          brk = 1;
+        }
+        if (line_sensors[i])
+        {
+          angle_x[neighbor_counter] += njl_x[i];
+          angle_y[neighbor_counter] += njl_y[i];
+          neighbor_sensor_number++;
+        }
+        else if (neighbor_sensor_number > 0)
+        {
+          angle_x[neighbor_counter] /= neighbor_sensor_number;
+          angle_y[neighbor_counter] /= neighbor_sensor_number;
 
-    //       neighbor_counter++;
-    //       neighbor_sensor_number = 0;
-    //     }
+          neighbor_counter++;
+          neighbor_sensor_number = 0;
+        }
 
-    //     if (brk)
-    //       break;
-    //   }
+        if (brk)
+          break;
+      }
 
-    //   for (uint8_t i = 0; i < neighbor_counter; i++)
-    //   {
-    //     average_x += angle_x[i];
-    //     average_y += angle_y[i];
-    //   }
+      for (uint8_t i = 0; i < neighbor_counter; i++)
+      {
+        average_x += angle_x[i];
+        average_y += angle_y[i];
+      }
 
-    //   if (average_x == 0)
-    //   {
-    //     if (average_y == 0)
-    //     {
-    //       robot.current_out_angle = njl_angle[time_outed_sensor[0]];
-    //     }
-    //     else if (average_y < 0)
-    //     {
-    //       robot.current_out_angle = -90;
-    //     }
-    //     else
-    //     {
-    //       robot.current_out_angle = 90;
-    //     }
-    //   }
-    //   else
-    //   {
-    //     robot.current_out_angle = (int)(atan2f(average_y, average_x) * RADIAN_TO_DEGREE);
-    //   }
+      if (average_x == 0)
+      {
+        if (average_y == 0)
+        {
+          robot.current_out_angle = njl_angle[time_outed_sensor[0]];
+        }
+        else if (average_y < 0)
+        {
+          robot.current_out_angle = -90;
+        }
+        else
+        {
+          robot.current_out_angle = 90;
+        }
+      }
+      else
+      {
+        robot.current_out_angle = (int)(atan2f(average_y, average_x) * RADIAN_TO_DEGREE);
+      }
 
-    //   if (robot.current_out_angle < 0)
-    //   {
-    //     robot.current_out_angle += 360;
-    //   }
+      if (robot.current_out_angle < 0)
+      {
+        robot.current_out_angle += 360;
+      }
 
-    //   robot.invert_out_angle = robot.current_out_angle - 180;
-    //   if (robot.invert_out_angle < 0)
-    //   {
-    //     robot.invert_out_angle += 360;
-    //   }
-    //   else if (robot.invert_out_angle > 359)
-    //   {
-    //     robot.invert_out_angle -= 360;
-    //   }
+      robot.invert_out_angle = robot.current_out_angle - 180;
+      if (robot.invert_out_angle < 0)
+      {
+        robot.invert_out_angle += 360;
+      }
+      else if (robot.invert_out_angle > 359)
+      {
+        robot.invert_out_angle -= 360;
+      }
 
-    //   int16_t min = 360, min_index = 19;
-    //   for (uint8_t i = 0; i < 20; i++)
-    //   {
-    //     if (abs(njl_angle[i] - robot.current_out_angle) < min)
-    //     {
-    //       min = abs(njl_angle[i] - robot.current_out_angle);
-    //       min_index = i;
-    //     }
-    //   }
-    //   if (status[min_index])
-    //   {
-    //     uint8_t index = min_index + 10;
-    //     if (index > 19)
-    //     {
-    //       index -= 20;
-    //     }
+      int16_t min = 360, min_index = 19;
+      for (uint8_t i = 0; i < 20; i++)
+      {
+        if (abs(njl_angle[i] - robot.current_out_angle) < min)
+        {
+          min = abs(njl_angle[i] - robot.current_out_angle);
+          min_index = i;
+        }
+      }
+      if (status[min_index])
+      {
+        uint8_t index = min_index + 10;
+        if (index > 19)
+        {
+          index -= 20;
+        }
 
-    //     if (status[index])
-    //     {
-    //       for (uint8_t i = 0; i < 20; i++)
-    //       {
-    //         if (time_outed_sensor[i] == min_index)
-    //         {
-    //           robot.out_angle = robot.current_out_angle;
-    //           break;
-    //         }
-    //         else if (time_outed_sensor[i] == index)
-    //         {
-    //           robot.out_angle = robot.invert_out_angle;
-    //           break;
-    //         }
-    //       }
-    //     }
-    //     else
-    //     {
-    //       robot.out_angle = robot.current_out_angle;
-    //     }
-    //   }
-    //   else
-    //   {
-    //     robot.out_angle = robot.invert_out_angle;
-    //   }
+        if (status[index])
+        {
+          for (uint8_t i = 0; i < 20; i++)
+          {
+            if (time_outed_sensor[i] == min_index)
+            {
+              robot.out_angle = robot.current_out_angle;
+              break;
+            }
+            else if (time_outed_sensor[i] == index)
+            {
+              robot.out_angle = robot.invert_out_angle;
+              break;
+            }
+          }
+        }
+        else
+        {
+          robot.out_angle = robot.current_out_angle;
+        }
+      }
+      else
+      {
+        robot.out_angle = robot.invert_out_angle;
+      }
 
-    //   //? Convert grading system
-    //   robot.out_angle -= 90;
-    //   if (robot.out_angle < -180)
-    //   {
-    //     robot.out_angle += 360;
-    //   }
-    //   else if (robot.out_angle > 180)
-    //   {
-    //     robot.out_angle -= 360;
-    //   }
+      //? Convert grading system
+      robot.out_angle -= 90;
+      if (robot.out_angle < -180)
+      {
+        robot.out_angle += 360;
+      }
+      else if (robot.out_angle > 180)
+      {
+        robot.out_angle -= 360;
+      }
 
-    //   if (!robot.line_detect)
-    //   {
-    //     for (uint8_t i = 0; i < 20; i++)
-    //     {
-    //       if (line_sensors[i] && robot.green_time > 500)
-    //       {
-    //         robot.first_out_sensor = i;
-    //         break;
-    //       }
-    //     }
-    //     robot.line_detect = true;
-    //     robot.in_out_area = true;
-    //   }
+      if (!robot.line_detect)
+      {
+        for (uint8_t i = 0; i < 20; i++)
+        {
+          if (line_sensors[i] && robot.green_time > 500)
+          {
+            robot.first_out_sensor = i;
+            break;
+          }
+        }
+        robot.line_detect = true;
+        robot.in_out_area = true;
+      }
 
-    //   robot.move_angle = robot.out_angle - 180;
-    //   if (robot.move_angle < 0)
-    //   {
-    //     robot.move_angle += 360;
-    //   }
-    //   robot.percent_speed = BRAKE_PERCENT_SPEED;
-    // }
-    // else
-    // {
-    //   robot.line_detect = false;
-    //   robot.percent_speed = 0;
+      robot.move_angle = robot.out_angle - 180;
+      if (robot.move_angle < 0)
+      {
+        robot.move_angle += 360;
+      }
+      robot.percent_speed = BRAKE_PERCENT_SPEED;
+    }
+    else
+    {
+      robot.line_detect = false;
+      robot.percent_speed = 0;
 
-    //   if (robot.green_time > 200)
-    //   {
-    //     for (uint8_t i = 0; i < 20; i++)
-    //     {
-    //       time_outed_sensor[i] = 255;
-    //       time_outed_sensor_index = 0;
-    //       status[i] = false;
-    //     }
-    //   }
-    // }
+      if (robot.green_time > 200)
+      {
+        for (uint8_t i = 0; i < 20; i++)
+        {
+          time_outed_sensor[i] = 255;
+          time_outed_sensor_index = 0;
+          status[i] = false;
+        }
+      }
+    }
 
-    if (!robot.line_detect && (!robot.in_out_area || abs(robot.out_angle - robot.get_ball_move_angle) > 90))
+    if (!robot.line_detect && (!robot.in_out_area || abs(robot.out_angle - robot.get_ball_move_angle) > 45))
     {
       robot.in_out_area = false;
       robot.move_angle = robot.get_ball_move_angle;
@@ -630,16 +629,17 @@ int main(void)
       {
         // read_pixy();
       }
+      // sprintf(tx_buff, "L: %d   B: %d   R: %d\r\n", left_srf.width, back_srf.width, right_srf.width);
+      // PRINT_BUFFER();
+
+      // sprintf(tx_buff, "W: %d   H: %d\r\n", goal.width, goal.height);
+      // PRINT_BUFFER();
+
       Task10ms -= 10;
     }
 
     if (Task50ms > 49)
     {
-      debug_counter++;
-      if (debug_counter > 20)
-      {
-        debug_counter -= 20;
-      }
       if (robot.captured_ball)
       {
         ToggleLED();

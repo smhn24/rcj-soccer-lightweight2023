@@ -48,13 +48,14 @@ while(True):
             img.draw_string(blob.x() + 2, blob.y() + 2, "blue")
             goal_rects.append(GoalRect(x=blob.cx(), y=blob.cy(), width=blob.w(), height=blob.h(), color='Blue'))
 
-    try:
+    if len(goal_rects) > 0:
         goal = goal_rects[0]
-    except:
+        for rect in goal_rects:
+            if rect.width > goal.width:
+                goal = rect
+    else:
         goal = GoalRect(x=0, y=0, width=0, height=0, color='')
-    for rect in goal_rects:
-        if rect.width > goal.width:
-            goal = rect
+
         #print(f'{rect.width}')
         #print(f'Length: {120 - rect.y}   Width: {rect.x - 80}')
         #print(rect.x)
@@ -73,11 +74,6 @@ while(True):
 
     uart.write(f'/{goal_width:04},{goal_length:03}')
     #print(f'/{goal_width:04},{goal_length:03}')
-
-
-    if len(blobs) == 0:
-        #print("No goal detected!!!")
-        pass
 
 
         #print(f"coord: ({blob.cx()}, {blob.cy()})")

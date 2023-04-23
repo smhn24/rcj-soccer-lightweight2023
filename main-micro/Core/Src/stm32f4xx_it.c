@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "tssp_helper.h"
+#include "srf_helper.h"
 #include "robot_movement.h"
 #include "keys.h"
 /* USER CODE END Includes */
@@ -47,8 +48,9 @@
 // extern volatile Robot robot;
 extern Robot robot;
 extern TSSP sensors[16];
+extern SRF left_srf, right_srf, back_srf;
 extern uint16_t width_temp[16][AVERAGE_DATA_NUMBER];
-extern uint16_t Task1ms, Task4ms, Task10ms, Task50ms;
+extern uint16_t Task1ms, Task4ms, Task10ms, Task25ms, Task50ms;
 // extern uint8_t Task4ms;
 /* USER CODE END PV */
 
@@ -70,6 +72,7 @@ extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim7;
 extern TIM_HandleTypeDef htim8;
 extern TIM_HandleTypeDef htim12;
+extern TIM_HandleTypeDef htim13;
 extern DMA_HandleTypeDef hdma_uart4_tx;
 extern DMA_HandleTypeDef hdma_uart5_rx;
 extern UART_HandleTypeDef huart4;
@@ -82,8 +85,8 @@ extern UART_HandleTypeDef huart5;
 /*           Cortex-M4 Processor Interruption and Exception Handlers          */
 /******************************************************************************/
 /**
- * @brief This function handles Non maskable interrupt.
- */
+  * @brief This function handles Non maskable interrupt.
+  */
 void NMI_Handler(void)
 {
   /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
@@ -98,8 +101,8 @@ void NMI_Handler(void)
 }
 
 /**
- * @brief This function handles Hard fault interrupt.
- */
+  * @brief This function handles Hard fault interrupt.
+  */
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
@@ -113,8 +116,8 @@ void HardFault_Handler(void)
 }
 
 /**
- * @brief This function handles Memory management fault.
- */
+  * @brief This function handles Memory management fault.
+  */
 void MemManage_Handler(void)
 {
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
@@ -128,8 +131,8 @@ void MemManage_Handler(void)
 }
 
 /**
- * @brief This function handles Pre-fetch fault, memory access fault.
- */
+  * @brief This function handles Pre-fetch fault, memory access fault.
+  */
 void BusFault_Handler(void)
 {
   /* USER CODE BEGIN BusFault_IRQn 0 */
@@ -143,8 +146,8 @@ void BusFault_Handler(void)
 }
 
 /**
- * @brief This function handles Undefined instruction or illegal state.
- */
+  * @brief This function handles Undefined instruction or illegal state.
+  */
 void UsageFault_Handler(void)
 {
   /* USER CODE BEGIN UsageFault_IRQn 0 */
@@ -153,13 +156,13 @@ void UsageFault_Handler(void)
   while (1)
   {
     /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
-    /* USER CODE END W1_UsageFault_zIRQn 0 */
+    /* USER CODE END W1_UsageFault_IRQn 0 */
   }
 }
 
 /**
- * @brief This function handles System service call via SWI instruction.
- */
+  * @brief This function handles System service call via SWI instruction.
+  */
 void SVC_Handler(void)
 {
   /* USER CODE BEGIN SVCall_IRQn 0 */
@@ -171,8 +174,8 @@ void SVC_Handler(void)
 }
 
 /**
- * @brief This function handles Debug monitor.
- */
+  * @brief This function handles Debug monitor.
+  */
 void DebugMon_Handler(void)
 {
   /* USER CODE BEGIN DebugMonitor_IRQn 0 */
@@ -184,8 +187,8 @@ void DebugMon_Handler(void)
 }
 
 /**
- * @brief This function handles Pendable request for system service.
- */
+  * @brief This function handles Pendable request for system service.
+  */
 void PendSV_Handler(void)
 {
   /* USER CODE BEGIN PendSV_IRQn 0 */
@@ -197,8 +200,8 @@ void PendSV_Handler(void)
 }
 
 /**
- * @brief This function handles System tick timer.
- */
+  * @brief This function handles System tick timer.
+  */
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
@@ -218,8 +221,8 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
- * @brief This function handles DMA1 stream0 global interrupt.
- */
+  * @brief This function handles DMA1 stream0 global interrupt.
+  */
 void DMA1_Stream0_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Stream0_IRQn 0 */
@@ -232,8 +235,8 @@ void DMA1_Stream0_IRQHandler(void)
 }
 
 /**
- * @brief This function handles DMA1 stream4 global interrupt.
- */
+  * @brief This function handles DMA1 stream4 global interrupt.
+  */
 void DMA1_Stream4_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Stream4_IRQn 0 */
@@ -246,8 +249,8 @@ void DMA1_Stream4_IRQHandler(void)
 }
 
 /**
- * @brief This function handles TIM2 global interrupt.
- */
+  * @brief This function handles TIM2 global interrupt.
+  */
 void TIM2_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM2_IRQn 0 */
@@ -328,8 +331,8 @@ void TIM2_IRQHandler(void)
 }
 
 /**
- * @brief This function handles TIM3 global interrupt.
- */
+  * @brief This function handles TIM3 global interrupt.
+  */
 void TIM3_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM3_IRQn 0 */
@@ -410,21 +413,69 @@ void TIM3_IRQHandler(void)
 }
 
 /**
- * @brief This function handles TIM4 global interrupt.
- */
+  * @brief This function handles TIM4 global interrupt.
+  */
 void TIM4_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM4_IRQn 0 */
-  for (uint8_t i = 0; i < 16; i++)
+  if (TIM4->SR & TIM_SR_CC1IF) //! Timer 4 channel 1
   {
-    sensors[i].timeout++;
-    if (sensors[i].timeout > TSSP_MAX_TIMEOUT)
+    if (TIM4->CCER & TIM_CCER_CC1P)
     {
-      sensors[i].start_time = 0;
-      sensors[i].end_time = 0;
-      update_sensor(i, &sensors[i]);
-      sensors[i].timeout = 0;
+      left_srf.end_time = TIM4->CCR1;
+      if (left_srf.end_time < left_srf.start_time)
+        left_srf.end_time += 19999;
+      left_srf.width = left_srf.end_time - left_srf.start_time;
+
+      TIM4->CCER &= ~TIM_CCER_CC1P;
     }
+    else
+    {
+      left_srf.start_time = TIM4->CCR1;
+
+      TIM4->CCER |= TIM_CCER_CC1P;
+    }
+    TIM4->SR &= ~TIM_SR_CC1IF; //? Clear CC1P interrupt flag
+  }
+
+  if (TIM4->SR & TIM_SR_CC2IF) //! Timer 4 channel 2
+  {
+    if (TIM4->CCER & TIM_CCER_CC2P)
+    {
+      back_srf.end_time = TIM4->CCR2;
+      if (back_srf.end_time < back_srf.start_time)
+        back_srf.end_time += 19999;
+      back_srf.width = back_srf.end_time - back_srf.start_time;
+
+      TIM4->CCER &= ~TIM_CCER_CC2P;
+    }
+    else
+    {
+      back_srf.start_time = TIM4->CCR2;
+
+      TIM4->CCER |= TIM_CCER_CC2P;
+    }
+    TIM4->SR &= ~TIM_SR_CC2IF; //? Clear CC2P interrupt flag
+  }
+
+  if (TIM4->SR & TIM_SR_CC3IF) //! Timer 4 channel 3
+  {
+    if (TIM4->CCER & TIM_CCER_CC3P)
+    {
+      right_srf.end_time = TIM4->CCR3;
+      if (right_srf.end_time < right_srf.start_time)
+        right_srf.end_time += 19999;
+      right_srf.width = right_srf.end_time - right_srf.start_time;
+
+      TIM4->CCER &= ~TIM_CCER_CC3P;
+    }
+    else
+    {
+      right_srf.start_time = TIM4->CCR3;
+
+      TIM4->CCER |= TIM_CCER_CC3P;
+    }
+    TIM4->SR &= ~TIM_SR_CC3IF; //? Clear CC2P interrupt flag
   }
   /* USER CODE END TIM4_IRQn 0 */
   HAL_TIM_IRQHandler(&htim4);
@@ -434,8 +485,8 @@ void TIM4_IRQHandler(void)
 }
 
 /**
- * @brief This function handles TIM8 break interrupt and TIM12 global interrupt.
- */
+  * @brief This function handles TIM8 break interrupt and TIM12 global interrupt.
+  */
 void TIM8_BRK_TIM12_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM8_BRK_TIM12_IRQn 0 */
@@ -483,22 +534,33 @@ void TIM8_BRK_TIM12_IRQHandler(void)
 }
 
 /**
- * @brief This function handles TIM8 update interrupt and TIM13 global interrupt.
- */
+  * @brief This function handles TIM8 update interrupt and TIM13 global interrupt.
+  */
 void TIM8_UP_TIM13_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM8_UP_TIM13_IRQn 0 */
-
+  for (uint8_t i = 0; i < 16; i++)
+  {
+    sensors[i].timeout++;
+    if (sensors[i].timeout > TSSP_MAX_TIMEOUT)
+    {
+      sensors[i].start_time = 0;
+      sensors[i].end_time = 0;
+      update_sensor(i, &sensors[i]);
+      sensors[i].timeout = 0;
+    }
+  }
   /* USER CODE END TIM8_UP_TIM13_IRQn 0 */
   HAL_TIM_IRQHandler(&htim8);
+  HAL_TIM_IRQHandler(&htim13);
   /* USER CODE BEGIN TIM8_UP_TIM13_IRQn 1 */
 
   /* USER CODE END TIM8_UP_TIM13_IRQn 1 */
 }
 
 /**
- * @brief This function handles TIM8 capture compare interrupt.
- */
+  * @brief This function handles TIM8 capture compare interrupt.
+  */
 void TIM8_CC_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM8_CC_IRQn 0 */
@@ -579,8 +641,8 @@ void TIM8_CC_IRQHandler(void)
 }
 
 /**
- * @brief This function handles TIM5 global interrupt.
- */
+  * @brief This function handles TIM5 global interrupt.
+  */
 void TIM5_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM5_IRQn 0 */
@@ -627,8 +689,8 @@ void TIM5_IRQHandler(void)
 }
 
 /**
- * @brief This function handles UART4 global interrupt.
- */
+  * @brief This function handles UART4 global interrupt.
+  */
 void UART4_IRQHandler(void)
 {
   /* USER CODE BEGIN UART4_IRQn 0 */
@@ -641,8 +703,8 @@ void UART4_IRQHandler(void)
 }
 
 /**
- * @brief This function handles UART5 global interrupt.
- */
+  * @brief This function handles UART5 global interrupt.
+  */
 void UART5_IRQHandler(void)
 {
   /* USER CODE BEGIN UART5_IRQn 0 */
@@ -655,8 +717,8 @@ void UART5_IRQHandler(void)
 }
 
 /**
- * @brief This function handles TIM7 global interrupt.
- */
+  * @brief This function handles TIM7 global interrupt.
+  */
 void TIM7_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM7_IRQn 0 */
@@ -678,15 +740,29 @@ void TIM7_IRQHandler(void)
     robot.camera_refresh_time++;
   }
 
-  if (!CAPTURED_BALL_STATUS() && robot.captured_ball_time < 10000)
+  if (!CAPTURED_BALL_STATUS())
   {
-    robot.captured_ball_time++;
+    if (robot.captured_ball_time < 10000)
+      robot.captured_ball_time++;
+  }
+  else
+  {
+    robot.captured_ball_time = 0;
   }
 
   Task1ms++;
   Task4ms++;
   Task10ms++;
+  Task25ms++;
   Task50ms++;
+
+  LL_GPIO_ResetOutputPin(SRFs_TRIGGER_GPIO_Port, SRFs_TRIGGER_Pin);
+  if (Task25ms > 24)
+  {
+    LL_GPIO_SetOutputPin(SRFs_TRIGGER_GPIO_Port, SRFs_TRIGGER_Pin);
+    Task25ms = 0;
+  }
+
   /* USER CODE END TIM7_IRQn 0 */
   HAL_TIM_IRQHandler(&htim7);
   /* USER CODE BEGIN TIM7_IRQn 1 */

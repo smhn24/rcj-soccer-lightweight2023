@@ -319,7 +319,7 @@ void update_head_angle()
         {
             sum_i = HEAD_ROTATION_I_MAX;
         }
-        robot.head_angle = -goal.width * HEAD_ROTATION_KP;
+        robot.head_angle = -(goal.width) * HEAD_ROTATION_KP;
         robot.head_angle += sum_i * HEAD_ROTATION_KI;
     }
     else
@@ -327,7 +327,7 @@ void update_head_angle()
         robot.head_angle = 0;
     }
 
-    uint8_t tx[100];
-    sprintf(tx, "ha: %d\r\n", robot.head_angle);
-    HAL_UART_Transmit(&huart4, tx, strlen(tx), 200);
+    // uint8_t tx[100];
+    // sprintf(tx, "ha: %d\r\n", robot.head_angle);
+    // HAL_UART_Transmit(&huart4, tx, strlen(tx), 200);
 }

@@ -73,6 +73,8 @@ void Error_Handler(void);
 #define LED_GPIO_Port GPIOC
 #define StartKey_Pin LL_GPIO_PIN_15
 #define StartKey_GPIO_Port GPIOC
+#define SRFs_TRIGGER_Pin LL_GPIO_PIN_0
+#define SRFs_TRIGGER_GPIO_Port GPIOC
 #define ROBOT_ROLE_Pin LL_GPIO_PIN_2
 #define ROBOT_ROLE_GPIO_Port GPIOC
 #define BALL_SENSOR_1_Pin LL_GPIO_PIN_3
@@ -129,6 +131,12 @@ void Error_Handler(void);
 #define TSSP6_GPIO_Port GPIOB
 #define TSSP9_Pin LL_GPIO_PIN_5
 #define TSSP9_GPIO_Port GPIOB
+#define SRF_LEFT_ECHO_Pin LL_GPIO_PIN_6
+#define SRF_LEFT_ECHO_GPIO_Port GPIOB
+#define SRF_BACK_ECHO_Pin LL_GPIO_PIN_7
+#define SRF_BACK_ECHO_GPIO_Port GPIOB
+#define SRF_RIGHT_ECHO_Pin LL_GPIO_PIN_8
+#define SRF_RIGHT_ECHO_GPIO_Port GPIOB
 #define BALL_SENSOR_2_Pin LL_GPIO_PIN_9
 #define BALL_SENSOR_2_GPIO_Port GPIOB
 

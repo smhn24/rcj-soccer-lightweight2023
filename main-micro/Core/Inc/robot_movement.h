@@ -27,9 +27,10 @@
 #define HEAD_KI (robot.role == attacker ? 0.2 : 0.3)
 #define HEAD_KP (robot.role == attacker ? 0.9 : 1.3)
 #define HEAD_KD 0.0
-#define HEAD_ROTATION_KP 1.2
-#define HEAD_ROTATION_I_MAX 200
-#define HEAD_ROTATION_KI 0.04
+#define HEAD_ROTATION_KP 2.1
+#define HEAD_ROTATION_I_MAX 100
+// #define HEAD_ROTATION_KI 0.0002
+#define HEAD_ROTATION_KI 0
 
 #define KP 0.65
 #define KI 0.0
