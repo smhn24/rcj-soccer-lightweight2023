@@ -104,17 +104,12 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
   TurnOnLED();
-  uint32_t *pSHCSR = (uint32_t *)0xE000ED24;
-  *pSHCSR &= ~(1 << 0);
-  *pSHCSR &= ~(1 << 16);
-  *pSHCSR &= ~(1 << 17);
-  *pSHCSR &= ~(1 << 18);
   /* USER CODE END HardFault_IRQn 0 */
-  // while (1)
-  // {
-  /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-  /* USER CODE END W1_HardFault_IRQn 0 */
-  // }
+  while (1)
+  {
+    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+    /* USER CODE END W1_HardFault_IRQn 0 */
+  }
 }
 
 /**
@@ -158,7 +153,7 @@ void UsageFault_Handler(void)
   while (1)
   {
     /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
-    /* USER CODE END W1_UsageFault_IRQn 0 */
+    /* USER CODE END W1_UsageFault_zIRQn 0 */
   }
 }
 
@@ -681,6 +676,11 @@ void TIM7_IRQHandler(void)
   if (robot.camera_refresh_time < 10000)
   {
     robot.camera_refresh_time++;
+  }
+
+  if (!CAPTURED_BALL_STATUS() && robot.captured_ball_time < 10000)
+  {
+    robot.captured_ball_time++;
   }
 
   Task1ms++;

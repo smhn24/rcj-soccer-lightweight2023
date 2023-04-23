@@ -75,6 +75,8 @@ void Error_Handler(void);
 #define StartKey_GPIO_Port GPIOC
 #define ROBOT_ROLE_Pin LL_GPIO_PIN_2
 #define ROBOT_ROLE_GPIO_Port GPIOC
+#define BALL_SENSOR_1_Pin LL_GPIO_PIN_3
+#define BALL_SENSOR_1_GPIO_Port GPIOC
 #define TSSP5_Pin LL_GPIO_PIN_0
 #define TSSP5_GPIO_Port GPIOA
 #define TSSP10_Pin LL_GPIO_PIN_1
@@ -127,6 +129,8 @@ void Error_Handler(void);
 #define TSSP6_GPIO_Port GPIOB
 #define TSSP9_Pin LL_GPIO_PIN_5
 #define TSSP9_GPIO_Port GPIOB
+#define BALL_SENSOR_2_Pin LL_GPIO_PIN_9
+#define BALL_SENSOR_2_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

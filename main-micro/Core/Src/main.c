@@ -87,7 +87,6 @@ float njl_y[20] = {0, 0.31, 0.58, 0.81, 0.95, 1, 0.95, 0.81, 0.58, 0.31, 0, -0.3
 bool status[20] = {0};
 
 uint16_t debug_counter = 0; //! debug
-// int head_angle;             //! debug
 
 uint8_t openmv_data[OPENMV_DATA_LENGTH] = {0};
 // uint8_t pixycam_data[PIXYCAM_DATA_LENGTH] = {0};
@@ -96,6 +95,11 @@ uint8_t time_outed_sensor[20] = {255};
 uint8_t time_outed_sensor_index = 0;
 
 float GyroZ_Filtered = 0, HeadPID_i = 0, HeadPIDLastError = 0, HeadPID_Out = 0;
+
+float angle_x[20] = {0}, angle_y[20] = {0};
+
+uint8_t ReadBNOStatus = 0;
+uint8_t BNO_lsb, BNO_msb;
 
 //* Tasks *//
 volatile uint16_t Task1ms = 0, Task4ms = 0, Task10ms = 0, Task50ms = 0;
@@ -108,39 +112,54 @@ void update_robot_angle()
 {
   static bool ignore = false;
   int angle;
-  uint8_t data[2];
-  HAL_GPIO_WritePin(SPI1_BNO_SS_GPIO_Port, SPI1_BNO_SS_Pin, 0);
-  HAL_SPI_Transmit(&hspi1, "L", 1, 100);
-  HAL_Delay(1);
-  HAL_SPI_Receive(&hspi1, &data[0], 1, 100);
-  __NOP();
-  HAL_SPI_Transmit(&hspi1, "H", 1, 100);
-  HAL_Delay(1);
-  HAL_SPI_Receive(&hspi1, &data[1], 1, 100);
-  __NOP();
-  HAL_GPIO_WritePin(SPI1_BNO_SS_GPIO_Port, SPI1_BNO_SS_Pin, 1);
-  HAL_Delay(1);
 
-  angle = (data[1] << 8) | data[0];
-  if (angle >= 360)
+  if (ReadBNOStatus == 0)
   {
-    angle = 0;
+    HAL_GPIO_WritePin(SPI1_BNO_SS_GPIO_Port, SPI1_BNO_SS_Pin, 0);
+    __NOP();
+    HAL_SPI_Transmit(&hspi1, "L", 1, 100);
   }
 
-  angle *= -1;
-  if (angle < -180)
+  if (ReadBNOStatus == 1)
   {
-    angle += 360;
+    HAL_SPI_Receive(&hspi1, &BNO_lsb, 1, 100);
+    __NOP();
+    HAL_SPI_Transmit(&hspi1, "H", 1, 100);
   }
 
-  if (abs(angle - robot.angle) < 15 || ignore)
+  if (ReadBNOStatus == 2)
   {
-    robot.angle = angle;
-    ignore = false;
+    HAL_SPI_Receive(&hspi1, &BNO_msb, 1, 100);
+    __NOP();
+    HAL_GPIO_WritePin(SPI1_BNO_SS_GPIO_Port, SPI1_BNO_SS_Pin, 1);
+
+    angle = (BNO_msb << 8) | BNO_lsb;
+    if (angle >= 360)
+    {
+      angle = 0;
+    }
+
+    angle *= -1;
+    if (angle < -180)
+    {
+      angle += 360;
+    }
+
+    if (abs(angle - robot.angle) < 15 || ignore)
+    {
+      robot.angle = angle;
+      ignore = false;
+    }
+    else
+    {
+      ignore = true;
+    }
   }
-  else
+
+  ReadBNOStatus++;
+  if (ReadBNOStatus > 2)
   {
-    ignore = true;
+    ReadBNOStatus = 0;
   }
 }
 
@@ -277,25 +296,38 @@ int main(void)
   while (1)
   {
     uart_error_handler();
-    update_robot_angle();
+
     measure_ball_data(sensors, &ball);
-    get_ball(&ball);
+    // get_ball(&ball);
+
+    if (CAPTURED_BALL_STATUS())
+    {
+      robot.captured_ball = true;
+      robot.captured_ball_time = 0;
+    }
+    else if (robot.captured_ball_time > CAPTURE_BALL_TIMEOUT)
+    {
+      robot.captured_ball = false;
+    }
 
     //* Out code
     read_line_sensors(line_sensors); //? Update line_sensors array
     robot.on_line_sensors = on_line_sensors_number(line_sensors);
 
-    // float angle_x[20] = {0}, angle_y[20] = {0};
     // bool special_status = false, end_sensor_neighbor = false;
     // uint8_t neighbor_sensor_number = 0, neighbor_counter = 0;
     // int16_t average_neighbor_angle[20] = {0};
     // uint8_t start = 0, end = 21, temp = 0;
 
-    // average_x = 0;
-    // average_y = 0;
-
     // if (robot.on_line_sensors > 0)
     // {
+    // average_x = 0;
+    // average_y = 0;
+    // for(uint8_t i=0; i<20;i++)
+    // {
+    //   angle_x[i] = 0;
+    //   angle_y[i] = 0;
+    // }
     //   for (uint8_t i = 0; i < 20; i++)
     //   {
     //     if (line_sensors[i])
@@ -534,7 +566,9 @@ int main(void)
 
     if (Task1ms > 0)
     {
-      Task1ms = 0;
+      update_robot_angle();
+
+      Task1ms -= 1;
     }
 
     if (Task4ms > 3)
@@ -578,8 +612,15 @@ int main(void)
 
     if (Task10ms > 9)
     {
-      // sprintf(tx_buff, "HA: %d\r\n", robot.head_angle);
-      // PRINT_BUFFER();
+      // if (robot.captured_ball)
+      // {
+      //   update_head_angle();
+      // }
+      // else
+      // {
+      //   robot.head_angle = 0;
+      // }
+      update_head_angle();
 
       if (robot.role == attacker)
       {
@@ -589,7 +630,6 @@ int main(void)
       {
         // read_pixy();
       }
-
       Task10ms -= 10;
     }
 
@@ -600,7 +640,15 @@ int main(void)
       {
         debug_counter -= 20;
       }
-      ToggleLED();
+      if (robot.captured_ball)
+      {
+        ToggleLED();
+      }
+      else
+      {
+        TurnOffLED();
+      }
+
       Task50ms -= 50;
     }
     /* USER CODE END WHILE */
@@ -632,7 +680,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 8;
-  RCC_OscInitStruct.PLL.PLLN = 84;
+  RCC_OscInitStruct.PLL.PLLN = 168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
@@ -645,10 +693,10 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
     Error_Handler();
   }
