@@ -15,9 +15,17 @@
 #define GET_BALL_DISTANCE 10
 #define LEFT_TOLERANCE_ANGLE 335
 #define RIGHT_TOLERANCE_ANGLE 25
-#define MAX_DISTANCE 29.1 //? 11 + maxmimum distance
-#define MAX_SPEED_PERCENT (robot.role == attacker ? 0.7 : 0.8)
+// #define MAX_DISTANCE 29.1 //? 11 + maxmimum distance
+// #define MAX_DISTANCE 31.1 //? 13 + maxmimum distance
+// #define MAX_DISTANCE 32.1 //? 13 + maxmimum distance
+// #define MAX_DISTANCE 32.6 //? 13 + maxmimum distance
+#define MAX_DISTANCE 36.1 //? 13 + maxmimum distance
+// #define MAX_SPEED_PERCENT (robot.role == attacker ? 0.6 : 0.8)
+#define MAX_SPEED_PERCENT (robot.role == attacker ? 0.65 : 0.8)
+// #define MAX_GET_BALL_SPEED_PERCENT (robot.role == attacker ? 0.55 : 0.75)
 #define MAX_GET_BALL_SPEED_PERCENT (robot.role == attacker ? 0.55 : 0.75)
+// #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
+// #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.9 : 1)
 #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
 #define MIN_VERTICAL_DISTANCE 12
 #define CAPTURE_BALL_TIMEOUT 500

@@ -262,12 +262,12 @@ int main(void)
   //   HAL_UART_Receive_DMA(&huart5, pixycam_data, PIXYCAM_DATA_LENGTH);
   // }
 
-  LL_mDelay(500);
+  LL_mDelay(100);
   MPU6050_Init();
-  LL_mDelay(500);
+  LL_mDelay(100);
   MPU6050_Calibration();
   start_timers();
-  LL_mDelay(1500); //! Wait for BNO055 to be ready(Boot time)
+  LL_mDelay(500); //! Wait for BNO055 to be ready(Boot time)
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -290,7 +290,7 @@ int main(void)
     }
   }
 
-  MOTORS_ENABLE();
+  // MOTORS_ENABLE();
 
   while (1)
   {
@@ -316,7 +316,7 @@ int main(void)
     bool special_status = false, end_sensor_neighbor = false;
     uint8_t neighbor_sensor_number = 0, neighbor_counter = 0;
     int16_t average_neighbor_angle[20] = {0};
-    uint8_t start = 0, end = 21, temp = 0;
+    uint8_t start = 0, end = 20, temp = 0;
 
     if (robot.on_line_sensors > 0)
     {
@@ -556,7 +556,7 @@ int main(void)
       }
     }
 
-    if (!robot.line_detect && (!robot.in_out_area || abs(robot.out_angle - robot.get_ball_move_angle) > 30))
+    if (!robot.line_detect && (!robot.in_out_area || abs(robot.out_angle - robot.get_ball_move_angle) > 45))
     {
       robot.in_out_area = false;
       robot.move_angle = robot.get_ball_move_angle;
@@ -625,6 +625,17 @@ int main(void)
 
       // sprintf(tx_buff, "W: %d   H: %d\r\n", goal.width, goal.height);
       // PRINT_BUFFER();
+      // sprintf(tx_buff, "BA: %d   BD: %d   MA: %d\r\n", ball.angle, ball.distance, robot.move_angle);
+      // PRINT_BUFFER();
+
+      for (uint8_t i = 0; i < 20; i++)
+      {
+        sprintf(tx_buff, "%u", line_sensors[i]);
+        HAL_UART_Transmit(&huart4, tx_buff, strlen(tx_buff), 200);
+      }
+
+      sprintf(tx_buff, " MA: %d  PS: %.2f  OA: %d\r\n", robot.move_angle, robot.percent_speed, robot.out_angle);
+      PRINT_BUFFER();
 
       Task10ms -= 10;
     }

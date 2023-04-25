@@ -12,9 +12,17 @@ class GoalRect():
 
 
 thresholds = [
-    (36, 70, -128, 31, 40, 70), # Yellow -> code = 1
+    #(36, 70, -128, 31, 40, 70), # Yellow -> code = 1
+    #(62, 95, -13, 20, 23, 56),
+    #(40, 75, -11, 20, 15, 50),
+    (40, 100, -23, 11, 19, 81),
     #(12, 17, -3, 15, -35, -16)  # Blue -> code = 2
-    (15, 35, 10, 45, -85, -30)
+    #(15, 35, 10, 45, -85, -30)
+    #(31, 50, -10, 35, -75, -24)
+    #(60, 80, -24, 4, -55, -25)
+    #(25, 80, -40, 40, -85, -28)
+    #(65, 87, -23, 1, -45, -22)
+    (45, 87, -23, 1, -45, -22)
 ]
 
 blobs = []
@@ -26,8 +34,16 @@ sensor.reset()
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QQVGA)
 sensor.skip_frames(time = 2000)
-sensor.set_auto_gain(False)          # must be turned off for color tracking
-sensor.set_auto_whitebal(False)      # must be turned off for color tracking
+sensor.set_brightness(1)
+#sensor.set_saturation(3)
+#sensor.set_contrast(-3)
+sensor.set_contrast(3)
+#sensor.set_auto_whitebal(False)
+#sensor.set_auto_gain(False)          # must be turned off for color tracking
+sensor.set_auto_gain(False, gain_db=19)          # must be turned off for color tracking
+#sensor.set_auto_exposure(False, exposure_us=2500)
+#sensor.set_auto_whitebal(False)      # must be turned off for color tracking
+sensor.set_gainceiling(128)
 clock = time.clock()
 
 while(True):
@@ -41,11 +57,11 @@ while(True):
         img.draw_rectangle(blob.rect())
         img.draw_cross(blob.cx(), blob.cy())
         if blob.code() == 1:
-            img.draw_string(blob.x() + 2, blob.y() + 2, "yellow")
+            #img.draw_string(blob.x() + 2, blob.y() + 2, "yellow")
             goal_rects.append(GoalRect(x=blob.cx(), y=blob.cy(), width=blob.w(), height=blob.h(), color='Yellow'))
 
         elif blob.code() == 2:
-            img.draw_string(blob.x() + 2, blob.y() + 2, "blue")
+            #img.draw_string(blob.x() + 2, blob.y() + 2, "blue")
             goal_rects.append(GoalRect(x=blob.cx(), y=blob.cy(), width=blob.w(), height=blob.h(), color='Blue'))
 
     if len(goal_rects) > 0:
@@ -67,9 +83,11 @@ while(True):
         goal_width = goal.x-80
 
         if goal_width < 0:
-            goal_width -= int(goal.width/4)
+            #goal_width -= int(goal.width/4)
+            goal_width -= int(goal.width/3)
         elif goal_width > 0:
-            goal_width += int(goal_width/4)
+            #goal_width += int(goal_width/4)
+            goal_width += int(goal_width/3)
 
     else:
         goal_length = 0
