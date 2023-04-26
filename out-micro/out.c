@@ -1,8 +1,10 @@
 #include <18F46K22.h>
 #device ADC = 8
-#FUSES NOMCLR,NOPUT,NOCPD,NOWRTD,NOEBTR,NOWRTB,NOWRT,NOWDT
-//!#FUSES NOWDT //! No Watch Dog Timer
-#use delay(clock=64000000, internal=16000000)
+//!#FUSES NOMCLR,NOPUT,NOCPD,NOWRTD,NOEBTR,NOWRTB,NOWRT,NOWDT
+#FUSES NOWDT,NOMCLR //! No Watch Dog Timer
+//!#use delay(clock=64000000, internal=16000000)
+#use delay(internal=16mhz)
+//!#use delay(internal=64mhz)
 
 //!#use delay(internal = 64mhz)
 
@@ -30,7 +32,8 @@
 #use rs232(baud = 115200, parity = N, xmit = PIN_c6, rcv = pin_D7, bits = 8, stream = blt) //? bluetooth terminal//password:123
 
 unsigned int32 digital_value = 0;
-unsigned int8 data[3] = {0};            //? Buffer to send digital data to master
+//!unsigned int8 data[3] = {0};            //? Buffer to send digital data to master
+unsigned int8 data[4] = {10, 20, 30, 40};            //? Buffer to send digital data to master
 unsigned int8 njl_values[20] = {0};     //? ADC value of each sensor
 unsigned int8 threshold_values[20];     //? threshhold value of each njl sensor
 unsigned int8 min_njl[20], max_njl[20]; //? Maximum & Minimum value of sensor uses to measure threshold
@@ -40,6 +43,7 @@ const unsigned int8 njl_channels[20] = {13, 11, 9, 8, 10, 12, 26, 25, 24, 19, 17
 int1 callibration_done = 0;
 int counter, counter_key = 0;
 unsigned int16 counter_4ms = 0;
+const unsigned int32 bit_values[20] = {0x00000001, 0x00000002, 0x00000004, 0x00000008, 0x00000010, 0x00000020, 0x00000040, 0x00000080, 0x00000100, 0x00000200, 0x00000400, 0x00000800, 0x00001000, 0x00002000, 0x00004000, 0x00008000, 0x00010000, 0x00020000, 0x00040000, 0x00080000};
 
 
 void check_sensors();
@@ -124,8 +128,6 @@ void main()
    
    //setup_wdt(WDT_4MS);
    
-   
-   
    while (True)
    {
 //!      restart_wdt();
@@ -154,7 +156,6 @@ void main()
 //!            restart_wdt();
             for (int i = 0; i < 20; i++)
             {
-               
                min_njl[i] = 255;
                max_njl[i] = 0;
             }
@@ -184,6 +185,7 @@ void main()
          for (int i = 0; i < 20; i++)
          {
 //!            restart_wdt();
+
 //!            threshold_values[i] = max_njl[i] - 40;
 //!            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 4) + min_njl[i];
 //!            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 8) + min_njl[i];
@@ -205,6 +207,28 @@ void main()
 
       check_sensors();
       
+      
+//!      if (digital_value & 0b00001111100000000000)
+//!      if (digital_value & 0b00000000000000000111)
+//!      {
+//!         b_high();
+//!      }
+//!      else
+//!      {
+//!         b_low();
+//!      }
+//!      
+//!      
+//!      if (njl_values[13] > threshold_values[13])
+//!      if (digital_value & 0b00001111100000000000)
+//!      {
+//!         l_high();
+//!      }
+//!      else
+//!      {
+//!         l_low();
+//!      } 
+//!      
      if (counter > 1)
       {
          b_high();
@@ -216,6 +240,7 @@ void main()
       if (counter > 2)
       {
          l_high();
+         
       }
       else
       {
@@ -229,14 +254,37 @@ void main()
       {
          f_low();
       }
-      
+
+
+//!      for (unsigned int8 i = 0; i < 20; i++)
+//!      {
+//!         printf("%u", digital_value&bit_values[i]);
+//!         printf("%ld", (digital_value&bit_values[i]));
+//!      }
+//!      printf("\r\n");
+
+//!     printf("%lu\r\n", digital_value);
+     
       if (counter_4ms > 20)
       {
          r_toggle();
          counter_4ms = 0;
       }
 //!      uint32_to_uint8(digital_value, data);
-      convert32to24(digital_value, &data[0], &data[1], &data[2]);
+//!      convert32to24(digital_value, &data[0], &data[1], &data[2]);
+      data[2] = digital_value & 0x000000FF;
+      digital_value >>= 8;
+      data[1] = digital_value & 0x000000FF;
+      digital_value >>= 8;
+      data[0] = digital_value & 0x000000FF;
+      
+      
+      data[3] = 80;
+      
+      
+//!      printf("%lu   H: %d   M: %d   L: %d\r\n", digital_value, data[0], data[1], data[2]);
+      
+//!      printf("%d\r\n", data[0]);
 //!      printf("%d\r\n", njl_values[0]);
 //!      i2c_ready();
    }
@@ -255,14 +303,16 @@ void check_sensors()
 
       if (njl_values[i] > threshold_values[i])
       {
-         bit_set(digital_value, i);
+//!         bit_set(digital_value, i);
+         digital_value |= bit_values[i];
 //!         printf("%u\r\n", i);
          counter++;
       }
-      else
-      {
-         bit_clear(digital_value, i);
-      }
+//!      else
+//!      {
+//!         bit_clear(digital_value, i);
+//!         digital_value &= ~bit_values[i];
+//!      }
    }
 }
 

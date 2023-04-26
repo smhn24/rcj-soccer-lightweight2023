@@ -26,7 +26,8 @@
 #define MAX_GET_BALL_SPEED_PERCENT (robot.role == attacker ? 0.55 : 0.75)
 // #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
 // #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.9 : 1)
-#define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
+// #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
+#define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.8 : 1)
 #define MIN_VERTICAL_DISTANCE 12
 #define CAPTURE_BALL_TIMEOUT 500
 

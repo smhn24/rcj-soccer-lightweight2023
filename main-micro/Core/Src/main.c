@@ -290,7 +290,7 @@ int main(void)
     }
   }
 
-  // MOTORS_ENABLE();
+  MOTORS_ENABLE();
 
   while (1)
   {
@@ -316,7 +316,8 @@ int main(void)
     bool special_status = false, end_sensor_neighbor = false;
     uint8_t neighbor_sensor_number = 0, neighbor_counter = 0;
     int16_t average_neighbor_angle[20] = {0};
-    uint8_t start = 0, end = 20, temp = 0;
+    // uint8_t start = 0, end = 20, temp = 0;
+    uint8_t start = 0, end = 21, temp = 0;
 
     if (robot.on_line_sensors > 0)
     {
@@ -619,7 +620,6 @@ int main(void)
       {
         robot.head_angle = 0;
       }
-      // update_head_angle();
       // sprintf(tx_buff, "L: %d   B: %d   R: %d\r\n", left_srf.width, back_srf.width, right_srf.width);
       // PRINT_BUFFER();
 
@@ -628,14 +628,14 @@ int main(void)
       // sprintf(tx_buff, "BA: %d   BD: %d   MA: %d\r\n", ball.angle, ball.distance, robot.move_angle);
       // PRINT_BUFFER();
 
-      for (uint8_t i = 0; i < 20; i++)
-      {
-        sprintf(tx_buff, "%u", line_sensors[i]);
-        HAL_UART_Transmit(&huart4, tx_buff, strlen(tx_buff), 200);
-      }
+      // for (uint8_t i = 0; i < 20; i++)
+      // {
+      //   sprintf(tx_buff, "%u", line_sensors[i]);
+      //   HAL_UART_Transmit(&huart4, tx_buff, strlen(tx_buff), 200);
+      // }
 
-      sprintf(tx_buff, " MA: %d  PS: %.2f  OA: %d\r\n", robot.move_angle, robot.percent_speed, robot.out_angle);
-      PRINT_BUFFER();
+      // sprintf(tx_buff, "   MA: %d  PS: %.2f  OA: %d\r\n", robot.move_angle, robot.percent_speed, robot.out_angle);
+      // PRINT_BUFFER();
 
       Task10ms -= 10;
     }
