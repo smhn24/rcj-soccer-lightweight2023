@@ -16,14 +16,17 @@ thresholds = [
     #(62, 95, -13, 20, 23, 56),
     #(40, 75, -11, 20, 15, 50),
     #(40, 100, -23, 11, 19, 81),
-    (74, 95, -20, 20, 15, 45),
+    (70, 100, -15, 25, 35, 72),
+    #(74, 95, -20, 20, 15, 45),
     #(12, 17, -3, 15, -35, -16)  # Blue -> code = 2
     #(15, 35, 10, 45, -85, -30)
     #(31, 50, -10, 35, -75, -24)
     #(60, 80, -24, 4, -55, -25)
     #(25, 80, -40, 40, -85, -28)
     #(65, 87, -23, 1, -45, -22)
-    (45, 87, -23, 1, -45, -22)
+    #(45, 87, -23, 1, -45, -22)
+    #(64, 80, -20, 10, -47, -20)
+    (40, 80, -15, 15, -56, -20)
 ]
 
 blobs = []
@@ -35,16 +38,16 @@ sensor.reset()
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QQVGA)
 sensor.skip_frames(time = 2000)
-sensor.set_brightness(1)
+#sensor.set_brightness(-2) #!!!
 #sensor.set_saturation(3)
 #sensor.set_contrast(-3)
-sensor.set_contrast(3)
+#sensor.set_contrast(3) #!!!
 #sensor.set_auto_whitebal(False)
 #sensor.set_auto_gain(False)          # must be turned off for color tracking
-sensor.set_auto_gain(False, gain_db=19)          # must be turned off for color tracking
+#sensor.set_auto_gain(False, gain_db=19)          # must be turned off for color tracking  #!!!
 #sensor.set_auto_exposure(False, exposure_us=2500)
 #sensor.set_auto_whitebal(False)      # must be turned off for color tracking
-sensor.set_gainceiling(128)
+#sensor.set_gainceiling(128) #!!!
 clock = time.clock()
 
 while(True):
@@ -85,10 +88,10 @@ while(True):
 
         if goal_width < 0:
             #goal_width -= int(goal.width/4)
-            goal_width -= int(goal.width/3)
+            goal_width -= int(goal.width/3.5)
         elif goal_width > 0:
             #goal_width += int(goal_width/4)
-            goal_width += int(goal_width/3)
+            goal_width += int(goal_width/3.5)
 
     else:
         goal_length = 0

@@ -292,6 +292,11 @@ int main(void)
 
   MOTORS_ENABLE();
 
+  // while (1)
+  // {
+  //   set_motors(0, 0, 0, 50);
+  // }
+
   while (1)
   {
     uart_error_handler();
@@ -635,7 +640,8 @@ int main(void)
       // }
 
       // sprintf(tx_buff, "   MA: %d  PS: %.2f  OA: %d\r\n", robot.move_angle, robot.percent_speed, robot.out_angle);
-      // PRINT_BUFFER();
+      sprintf(tx_buff, "%d     %d    R: %d\r\n", BALL_SENSOR_1_STATUS(), BALL_SENSOR_2_STATUS(), robot.captured_ball);
+      PRINT_BUFFER();
 
       Task10ms -= 10;
     }
