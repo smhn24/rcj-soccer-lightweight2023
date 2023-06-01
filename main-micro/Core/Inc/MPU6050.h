@@ -10,3 +10,5 @@ unsigned char MPU6050_Test_I2C(void);
 void MPU6050_Sleep(char ON_or_OFF);
 void MPU6050_Reset(void);
 void MPU6050_Init(void);
+void MPU6050_Calibration();
+int16_t Read_MPU6050();

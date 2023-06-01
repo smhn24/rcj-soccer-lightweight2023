@@ -13,4 +13,6 @@
 void read_line_sensors(bool *line_sensors);
 uint8_t on_line_sensors_number(bool *line_sensors);
 
+void update_out_data();
+
 #endif

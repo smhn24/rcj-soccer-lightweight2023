@@ -4,7 +4,9 @@
 
 extern Robot robot;
 extern uint8_t openmv_data[OPENMV_DATA_LENGTH];
-// extern uint8_t pixycam_data[PIXYCAM_DATA_LENGTH];
+
+uint8_t ReadBNOStatus = 0;
+uint8_t BNO_lsb, BNO_msb;
 
 void start_timers()
 {
@@ -65,5 +67,60 @@ void uart_error_handler()
         // {
         //     HAL_UART_Receive_DMA(&huart5, pixycam_data, PIXYCAM_DATA_LENGTH);
         // }
+    }
+}
+
+void update_robot_angle()
+{
+    static bool ignore = false;
+    int angle;
+
+    if (ReadBNOStatus == 0)
+    {
+        HAL_GPIO_WritePin(SPI1_BNO_SS_GPIO_Port, SPI1_BNO_SS_Pin, 0);
+        __NOP();
+        HAL_SPI_Transmit(&hspi1, "L", 1, 100);
+    }
+
+    if (ReadBNOStatus == 1)
+    {
+        HAL_SPI_Receive(&hspi1, &BNO_lsb, 1, 100);
+        __NOP();
+        HAL_SPI_Transmit(&hspi1, "H", 1, 100);
+    }
+
+    if (ReadBNOStatus == 2)
+    {
+        HAL_SPI_Receive(&hspi1, &BNO_msb, 1, 100);
+        __NOP();
+        HAL_GPIO_WritePin(SPI1_BNO_SS_GPIO_Port, SPI1_BNO_SS_Pin, 1);
+
+        angle = (BNO_msb << 8) | BNO_lsb;
+        if (angle >= 360)
+        {
+            angle = 0;
+        }
+
+        angle *= -1;
+        if (angle < -180)
+        {
+            angle += 360;
+        }
+
+        if (abs(angle - robot.angle) < 15 || ignore)
+        {
+            robot.angle = angle;
+            ignore = false;
+        }
+        else
+        {
+            ignore = true;
+        }
+    }
+
+    ReadBNOStatus++;
+    if (ReadBNOStatus > 2)
+    {
+        ReadBNOStatus = 0;
     }
 }

@@ -62,3 +62,36 @@ void MPU6050_Init()
 
     ////  MPU6050 Setup Complete
 }
+
+int16_t gyro_z_cal_value;
+
+int16_t Read_MPU6050()
+{
+    int16_t gyro_z;
+    uint8_t Register = RA_GYRO_ZOUT_H;
+    uint8_t MPURegVal[2];
+    HAL_I2C_Master_Transmit(&hi2c2, MPU6050_ADDRESS, (uint8_t *)&Register, 1, 100);
+    HAL_I2C_Master_Receive(&hi2c2, MPU6050_ADDRESS, (uint8_t *)MPURegVal, 2, 100);
+    gyro_z = (int)MPURegVal[0] << 8 | MPURegVal[1]; // Read high and low part of the angular data.
+    gyro_z -= gyro_z_cal_value;                     // Subtact the manual gyro y calibration value.
+
+    return gyro_z;
+}
+
+void MPU6050_Calibration()
+{
+    long int gyro_z_cal = 0; // TODO: Check with int32_t
+    uint8_t leds = 0;
+    uint16_t cal_int = 0;
+
+    gyro_z_cal_value = 0; // Set the manual yaw calibration variable to 0.
+
+    for (cal_int = 0; cal_int < 500; cal_int++)
+    {
+        gyro_z_cal += Read_MPU6050(); // Ad yaw value to gyro_yaw_cal.
+        LL_mDelay(3);
+    }
+
+    gyro_z_cal /= 500;             // Divide the z total by 2000.
+    gyro_z_cal_value = gyro_z_cal; // Set the manual z calibration variable to the detected value.
+}

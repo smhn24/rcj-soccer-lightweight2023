@@ -1,7 +1,8 @@
 #include <18F46K22.h>
 #device ADC = 8
 //!#FUSES NOMCLR,NOPUT,NOCPD,NOWRTD,NOEBTR,NOWRTB,NOWRT,NOWDT
-#FUSES NOWDT,NOMCLR //! No Watch Dog Timer
+//!#FUSES NOWDT,NOMCLR //! No Watch Dog Timer
+#FUSES NOWDT
 //!#use delay(clock=64000000, internal=16000000)
 #use delay(internal=16mhz)
 //!#use delay(internal=64mhz)
@@ -187,9 +188,9 @@ void main()
 //!            restart_wdt();
 
 //!            threshold_values[i] = max_njl[i] - 40;
-//!            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 4) + min_njl[i];
+            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 4) + min_njl[i];
 //!            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 8) + min_njl[i];
-            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 5) + min_njl[i];
+//!            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 5) + min_njl[i]; //Iranopen 2023
 //!            threshold_values[i] = ((max_njl[i] - min_njl[i]) / 3) + min_njl[i];
 //!            threshold_values[i] = (float)max_njl[i] * 0.65 + (float)min_njl[i] * 0.35;
 //!            threshold_values[i] = (float)max_njl[i] * 0.5 + (float)min_njl[i] * 0.5;

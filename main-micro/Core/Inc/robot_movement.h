@@ -13,36 +13,37 @@
 #define MAX_VELOCITY 100
 #define MAX_PWM_VALUE 2800
 // #define GET_BALL_DISTANCE 10
-#define GET_BALL_DISTANCE 9
+// #define GET_BALL_DISTANCE 9
+#define GET_BALL_DISTANCE 8
 #define LEFT_TOLERANCE_ANGLE 335
 #define RIGHT_TOLERANCE_ANGLE 25
 // #define MAX_DISTANCE 29.1 //? 11 + maxmimum distance
 // #define MAX_DISTANCE 31.1 //? 13 + maxmimum distance
-// #define MAX_DISTANCE 32.1 //? 13 + maxmimum distance
-// #define MAX_DISTANCE 32.6 //? 13 + maxmimum distance
-// #define MAX_DISTANCE 36.1 //? 19 + maxmimum distance
-// #define MAX_DISTANCE 37.1 //? 20 + maxmimum distance
-// #define MAX_DISTANCE 42.1 //? 25 + maxmimum distance
-// #define MAX_DISTANCE 45.1 //? 28 + maxmimum distance
-// #define MAX_DISTANCE 47.1 //? 30 + maxmimum distance
-// #define MAX_DISTANCE 57.1 //? 40 + maxmimum distance
-// #define MAX_DISTANCE 77.1 //? 60 + maxmimum distance
-#define MAX_DISTANCE 72.1 //? 55 + maxmimum distance
+// #define MAX_DISTANCE 33.1 //? 15 + maxmimum distance
+#define MAX_DISTANCE 35.1 //? 17 + maxmimum distance
+// #define MAX_DISTANCE 72.1 //? 55 + maxmimum distance
 // #define MAX_SPEED_PERCENT (robot.role == attacker ? 0.6 : 0.8)
-#define MAX_SPEED_PERCENT (robot.role == attacker ? 0.65 : 0.8)
+// #define MAX_SPEED_PERCENT (robot.role == attacker ? 0.65 : 0.8)
+#define MAX_SPEED_PERCENT 0.8
+#define MAX_GET_BALL_SPEED_PERCENT 0.75
+
 // #define MAX_GET_BALL_SPEED_PERCENT (robot.role == attacker ? 0.55 : 0.75)
-#define MAX_GET_BALL_SPEED_PERCENT (robot.role == attacker ? 0.55 : 0.75)
+// #define MAX_GET_BALL_SPEED_PERCENT (robot.role == attacker ? 0.55 : 0.75)
 // #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
 // #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.9 : 1)
 // #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
-#define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.8 : 1)
+// #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.8 : 1)
+
+#define BRAKE_PERCENT_SPEED 1
 #define MIN_VERTICAL_DISTANCE 12
 #define CAPTURE_BALL_TIMEOUT 500
 
 #define HEAD_PID_I_MAX 10
 #define HEAD_PID_MAX 50
-#define HEAD_KI (robot.role == attacker ? 0.2 : 0.3)
-#define HEAD_KP (robot.role == attacker ? 0.9 : 1.3)
+#define HEAD_KI 0.3
+#define HEAD_KP 1.3
+// #define HEAD_KI (robot.role == attacker ? 0.2 : 0.3)
+// #define HEAD_KP (robot.role == attacker ? 0.9 : 1.3)
 #define HEAD_KD 0.0
 #define HEAD_ROTATION_KP 1.3
 #define HEAD_ROTATION_I_MAX 100
@@ -68,34 +69,6 @@
 #define SET_MOTOR_2(pwm) TIM1->CCR1 = pwm
 #define SET_MOTOR_3(pwm) TIM1->CCR2 = pwm
 #define SET_MOTOR_4(pwm) TIM1->CCR3 = pwm
-
-typedef struct
-{
-    volatile robot_role_t role;
-    volatile float get_ball_percent_speed;
-    volatile float percent_speed;
-    volatile float njl_sum_x;
-    volatile float njl_sum_y;
-    volatile int16_t angle;
-    volatile int16_t head_angle;
-    volatile int16_t get_ball_move_angle;
-    volatile int16_t brake_move_angle;
-    volatile int16_t move_angle;
-    volatile int16_t current_out_angle;
-    volatile int16_t first_out_angle;
-    volatile int16_t out_angle;
-    volatile int16_t invert_out_angle;
-    volatile uint16_t green_time;
-    volatile uint16_t captured_ball_time;
-    volatile uint16_t camera_refresh_time;
-    volatile uint8_t on_line_sensors;
-    volatile uint8_t first_out_sensor;
-    volatile bool in_out_area;
-    volatile bool line_detect;
-    volatile bool must_brake;
-    volatile bool camera_connection;
-    volatile bool captured_ball;
-} Robot;
 
 void get_ball(BALL *ball);
 void set_motors(int motor_1, int motor_2, int motor_3, int motor_4);
