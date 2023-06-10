@@ -1,3 +1,6 @@
+#ifndef REG_H
+#define REG_H
+
 #include "stm32f4xx.h"
 
 #define MPU6050_ADDRESS 0xD0 // 0xD0 : 0b110100(ad0=0)0------>0xD0
@@ -139,3 +142,5 @@
 #define RA_FIFO_COUNTL 115 // R/W  FIFO_COUNT[7:0]
 #define RA_FIFO_R_W 116    // R/W  FIFO_DATA[7:0]
 #define RA_WHO_AM_I 117    // R    -    WHO_AM_I[6:1]    -
+
+#endif

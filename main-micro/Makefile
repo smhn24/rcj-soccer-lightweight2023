@@ -81,7 +81,9 @@ Core/Src/fonts.c \
 Core/Src/I2Cdev.c \
 Core/Src/MPU6050.c \
 Core/Src/camera.c \
-Core/Src/srf_helper.c
+Core/Src/srf_helper.c \
+Core/Src/attacker_strategy.c \
+Core/Src/goal_keeper_strategy.c 
 
 # ASM sources
 ASM_SOURCES =  \

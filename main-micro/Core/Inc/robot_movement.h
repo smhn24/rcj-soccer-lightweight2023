@@ -29,12 +29,13 @@
 
 // #define MAX_GET_BALL_SPEED_PERCENT (robot.role == attacker ? 0.55 : 0.75)
 // #define MAX_GET_BALL_SPEED_PERCENT (robot.role == attacker ? 0.55 : 0.75)
-// #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
-// #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.9 : 1)
-// #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
-// #define BRAKE_PERCENT_SPEED (robot.role == attacker ? 0.8 : 1)
+// #define ENTERING_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
+// #define ENTERING_PERCENT_SPEED (robot.role == attacker ? 0.9 : 1)
+// #define ENTERING_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
+// #define ENTERING_PERCENT_SPEED (robot.role == attacker ? 0.8 : 1)
 
-#define BRAKE_PERCENT_SPEED 1
+#define ENTERING_PERCENT_SPEED 1
+// #define BRAKE_PERCENT_SPEED 1
 #define MIN_VERTICAL_DISTANCE 12
 #define CAPTURE_BALL_TIMEOUT 500
 
@@ -53,6 +54,16 @@
 #define KP 0.65
 #define KI 0.0
 #define KD 0.05
+
+// ################### Keeper #####################
+// #define LINE_KP 0.3
+#define LINE_KP 0.25
+#define LINE_KI 0.0025
+#define LINE_KD 6
+// #define BALL_KP 3.5
+#define BALL_KP 12.5
+// #define GO_TO_PENALTY_SPEED 0.46
+#define GO_TO_PENALTY_SPEED 0.46
 
 #define MOTORS_ENABLE() LL_GPIO_SetOutputPin(MOTORS_ENABLE_GPIO_Port, MOTORS_ENABLE_Pin)
 #define MOTORS_DISABLE() LL_GPIO_ResetOutputPin(MOTORS_ENABLE_GPIO_Port, MOTORS_ENABLE_Pin)
@@ -76,5 +87,6 @@ void robot_move(int angle, float percent_speed);
 int pid_calculator(int error);
 void robot_brake(uint16_t time);
 void update_head_angle();
+void update_robot_head_pid();
 
 #endif

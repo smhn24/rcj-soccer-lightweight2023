@@ -39,6 +39,7 @@ void read_line_sensors(bool *line_sensors)
         out_data[0] >>= 1;
     }
 
+    // TODO: It must change
     bool temp = line_sensors[0];
     for (uint8_t i = 0; i < 19; i++)
     {
@@ -152,8 +153,8 @@ void update_out_data()
             neighbor_sensor_number = 0;
         }
 
-        // bool brk = 0;
-        bool brk = false;
+        bool brk = 0;
+        // bool brk = false;
 
         for (uint8_t i = start; i < end; i++)
         {
@@ -293,18 +294,25 @@ void update_out_data()
             robot.in_out_area = true;
         }
 
-        robot.move_angle = robot.out_angle - 180;
-        if (robot.move_angle < 0)
+        if (robot.role == attacker)
         {
-            robot.move_angle += 360;
+            robot.move_angle = robot.out_angle - 180;
+            while (robot.move_angle < 0)
+            {
+                robot.move_angle += 360;
+            }
+            robot.percent_speed = ENTERING_PERCENT_SPEED;
         }
-        robot.percent_speed = BRAKE_PERCENT_SPEED;
     }
     else
     {
         robot.line_detect = false;
-        robot.percent_speed = 0;
+        if (robot.role == attacker)
+        {
+            robot.percent_speed = 0;
+        }
 
+        //? All of the sensors don't see after getting in the field again
         if (robot.green_time > 200)
         {
             for (uint8_t i = 0; i < 20; i++)

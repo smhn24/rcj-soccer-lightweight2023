@@ -43,6 +43,8 @@
 #include "MPU6050.h"
 #include "camera.h"
 #include "srf_helper.h"
+#include "attacker_strategy.h"
+#include "goal_keeper_strategy.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -74,10 +76,27 @@ bool line_sensors[20] = {0};                        //? NJL sensors status that 
 
 uint8_t openmv_data[OPENMV_DATA_LENGTH] = {0};
 
-float GyroZ_Filtered = 0, HeadPID_i = 0, HeadPIDLastError = 0, HeadPID_Out = 0;
+float AyFilt = 0;
+float I_sigma = 0;
+float last_error_line = 0;
+
+float pidout_line = 0;
+int X_srf = 90;
+float Y_srf = 50;
+uint8_t TrueSRF = 0;
+
+uint16_t Y_timer = 0;
+
+uint16_t go_ahead_flag = 0;
+//******************************************
+
+volatile SRF left_srf, right_srf, back_srf;
+
+extern float average_x;
+extern float average_y;
 
 //* Tasks *//
-volatile uint16_t Task1ms = 0, Task4ms = 0, Task10ms = 0, Task25ms = 0, Task50ms = 0;
+volatile uint16_t Task1ms = 0, Task4ms = 0, Task10ms = 0, Task25ms = 0, Task30ms = 0, Task50ms = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -134,19 +153,18 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM13_Init();
   /* USER CODE BEGIN 2 */
-  robot.role = attacker;
+  // robot.role = attacker;
+  robot.role = goal_keeper;
 
-  // if (robot.role == attacker)
-  // {
   HAL_UART_Receive_DMA(&huart5, openmv_data, OPENMV_DATA_LENGTH);
-  // }
 
   LL_mDelay(100);
   MPU6050_Init();
   LL_mDelay(100);
   MPU6050_Calibration();
-  start_timers();
+  start_timers(); // TODO: Change place
   LL_mDelay(500); //! Wait for BNO055 to be ready(Boot time)
+  // LL_mDelay(100); //! Wait for BNO055 to be ready(Boot time)
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -173,10 +191,14 @@ int main(void)
 
   while (1)
   {
-    uart_error_handler();
+    uart_error_handler(); //? Error handler for uart dma(openmv)
 
     measure_ball_data(sensors, &ball);
-    get_ball(&ball);
+    // get_ball(&ball);
+    if (robot.role == attacker)
+    {
+      get_ball(&ball);
+    }
 
     if (CAPTURED_BALL_STATUS())
     {
@@ -194,11 +216,20 @@ int main(void)
     //? Update robot movement
     // TODO: It must change
     //! Shit condition
-    if (!robot.line_detect && (!robot.in_out_area || abs(robot.out_angle - robot.get_ball_move_angle) > 45))
+    // if (!robot.line_detect && (!robot.in_out_area || abs(robot.out_angle - robot.get_ball_move_angle) > 45))
+    // {
+    //   robot.in_out_area = false;
+    //   robot.move_angle = robot.get_ball_move_angle;
+    //   robot.percent_speed = robot.get_ball_percent_speed;
+    // }
+    if (robot.role == attacker)
     {
-      robot.in_out_area = false;
-      robot.move_angle = robot.get_ball_move_angle;
-      robot.percent_speed = robot.get_ball_percent_speed;
+      if (!robot.line_detect && (!robot.in_out_area || abs(robot.out_angle - robot.get_ball_move_angle) > 45))
+      {
+        robot.in_out_area = false;
+        robot.move_angle = robot.get_ball_move_angle;
+        robot.percent_speed = robot.get_ball_percent_speed;
+      }
     }
 
     if (Task1ms > 0)
@@ -210,30 +241,8 @@ int main(void)
 
     if (Task4ms > 3)
     {
-      int16_t GyroZ = Read_MPU6050();
-      GyroZ_Filtered = (GyroZ_Filtered * 0.70) + (((float)GyroZ / 65.5) * 0.30);
-
       //? Head PID
-      float HeadPID_Setpoint = -robot.angle + robot.head_angle;
-      float HeadPIDError;
-      HeadPIDError = -HeadPID_Setpoint;
-      HeadPIDError += (GyroZ_Filtered / 5);
-      HeadPID_i += HeadPIDError * HEAD_KI;
-      if (HeadPID_i > HEAD_PID_I_MAX)
-        HeadPID_i = HEAD_PID_I_MAX;
-      else if (HeadPID_i < HEAD_PID_I_MAX * -1)
-        HeadPID_i = HEAD_PID_I_MAX * -1;
-      else
-        HeadPID_i = 0;
-
-      float hpo = 0;
-      hpo = (HeadPIDError * HEAD_KP) + (HeadPID_i) + ((HeadPIDError - HeadPIDLastError) * HEAD_KD);
-      if (HeadPID_Out > HEAD_PID_MAX)
-        hpo = HEAD_PID_MAX;
-      else if (HeadPID_Out < HEAD_PID_MAX * -1)
-        hpo = HEAD_PID_MAX * -1;
-      HeadPID_Out = hpo;
-      HeadPIDLastError = HeadPIDError;
+      update_robot_head_pid();
 
       if (!robot.must_brake)
       {
@@ -244,28 +253,188 @@ int main(void)
         robot_brake(25);
       }
 
+      if (robot.role == attacker)
+      {
+        attacker_strategy();
+      }
+      // else
+      // {
+      //   goal_keeper_strategy();
+      // }
+
       Task4ms -= 4;
     }
 
     if (Task10ms > 9)
     {
-      if (robot.captured_ball)
+      if (robot.role == goal_keeper)
       {
-        update_head_angle();
-      }
-      else
-      {
-        robot.head_angle = 0;
+        // ################################### Line PID
+        //! Must call every 10ms
+        if (robot.on_line_sensors > 0)
+        {
+          // AyFilt = (AyFilt * 0.9) + (average_y * 0.1);
+          AyFilt = (AyFilt * 0.9) + (average_y * 0.1) + 0.025;
+          I_sigma += AyFilt;
+
+          if (I_sigma > 100)
+          {
+            I_sigma = 100;
+          }
+          else if (I_sigma < -100)
+          {
+            I_sigma = -100;
+          }
+          if (fabs(AyFilt) < 0.05)
+          {
+            I_sigma = 0;
+          }
+
+          pidout_line = LINE_KP * AyFilt + I_sigma * LINE_KI + (AyFilt - last_error_line) * LINE_KD;
+          last_error_line = AyFilt;
+          if (pidout_line > 1)
+          {
+            pidout_line = 1;
+          }
+          if (pidout_line < -1)
+          {
+            pidout_line = -1;
+          }
+        }
+
+        float MoveSpeed = 0;
+        float MoveAngle = 0;
+
+        //? False flag
+        // if (ball.angle > 45 || ball.angle < -45 || ball.distance < 15)
+        // {
+        // 	go_ahead_flag = false;
+        // }
+
+        if ((ball.angle > 330 || ball.angle < 30) && ball.distance > 10 && Y_srf < 50)
+        {
+          MoveAngle = 0;
+          MoveSpeed = 1;
+        }
+        else if (X_srf > RIGHT_GOAL_POS || X_srf < LEFT_GOAL_POS || Y_srf > (PENALTY_LINE_POS + 15) || (Y_srf < PENALTY_LINE_POS - 6))
+        {
+          MoveSpeed = GO_TO_PENALTY_SPEED;
+          if (Y_srf < PENALTY_LINE_POS - 5)
+          {
+            MoveAngle = 0;
+            pidout_line = 1;
+            // MoveSpeed = 0.5;
+          }
+          else
+          {
+            MoveAngle = 180 - atan2f((X_srf - 91), (Y_srf - PENALTY_LINE_POS)) * RADIAN_TO_DEGREE;
+          }
+        }
+
+        else
+        {
+          //? True flag
+          // else if (ball.angle < 45 && ball.angle > -45 && ball.distance > 15 && !go_ahead_flag)
+          // go_ahead_flag = true;
+          // // Y_srf = 0;
+          // Y_timer = 0;
+
+          // ################################### Ball PID
+          int16_t BallAngle = ball.angle;
+          BallAngle *= -1;
+          BallAngle += 450;
+          while (BallAngle > 360)
+          {
+            BallAngle -= 360;
+          }
+
+          float ball_error = 0;
+          if (ball.distance > 0)
+          {
+            // ball_error = cos(BallAngle * DEGREE_TO_RADIAN);
+            ball_error = cosf(BallAngle * DEGREE_TO_RADIAN);
+          }
+          float pidout_ball = BALL_KP * ball_error;
+          if (pidout_ball > 1)
+          {
+            pidout_ball = 1;
+          }
+          if (pidout_ball < -1)
+          {
+            pidout_ball = -1;
+          }
+
+          // ################################### Set Percent Speed
+          MoveSpeed = ((fabs(pidout_ball * ball_error)) + (fabs(pidout_line * AyFilt))) / (fabs(ball_error) + fabs(AyFilt));
+
+          // ################################### Set Move Angle
+          if (fabs(ball_error) < 0.05 || robot.green_time > 200)
+          {
+            if (pidout_line > 0)
+            {
+              MoveAngle = 0;
+            }
+            else if (pidout_line < 0)
+            {
+              MoveAngle = -180;
+            }
+          }
+          else
+          {
+            MoveAngle = atan2f(pidout_line, ball_error) * RADIAN_TO_DEGREE;
+
+            MoveAngle -= 90;
+          }
+
+          if (MoveAngle < -180)
+          {
+            MoveAngle += 360;
+          }
+          else if (MoveAngle > 180)
+          {
+            MoveAngle -= 360;
+          }
+
+          if (X_srf > RIGHT_GOAL_POS - 2 && MoveAngle < 0)
+            MoveSpeed = 0;
+          if (X_srf < LEFT_GOAL_POS + 2 && MoveAngle > 0)
+            MoveSpeed = 0;
+        }
+
+        if (MoveSpeed > 1)
+        {
+          MoveSpeed = 1;
+        }
+        else if (MoveSpeed < 0)
+        {
+          MoveSpeed = 0;
+        }
+
+        robot.percent_speed = MoveSpeed;
+        robot.move_angle = MoveAngle;
+
+        sprintf(tx_buff, "MS: %.2f    MA: %.2f\r\n", MoveSpeed, MoveAngle);
+        PRINT_BUFFER();
       }
 
       Task10ms -= 10;
+    }
+
+    if (Task30ms > 29)
+    {
+      update_srf_data();
+      // if (robot.role == goal_keeper)
+      // {
+      //   update_srf_data();
+      // }
+      Task30ms -= 30;
     }
 
     if (Task50ms > 49)
     {
       if (robot.captured_ball)
       {
-        ToggleLED();
+        TurnOnLED();
       }
       else
       {
