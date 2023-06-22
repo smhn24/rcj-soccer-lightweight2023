@@ -24,7 +24,8 @@
 // #define MAX_DISTANCE 72.1 //? 55 + maxmimum distance
 // #define MAX_SPEED_PERCENT (robot.role == attacker ? 0.6 : 0.8)
 // #define MAX_SPEED_PERCENT (robot.role == attacker ? 0.65 : 0.8)
-#define MAX_SPEED_PERCENT 0.8
+// #define MAX_SPEED_PERCENT 0.8
+#define MAX_SPEED_PERCENT 0.65
 #define MAX_GET_BALL_SPEED_PERCENT 0.75
 
 // #define MAX_GET_BALL_SPEED_PERCENT (robot.role == attacker ? 0.55 : 0.75)
@@ -34,10 +35,11 @@
 // #define ENTERING_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
 // #define ENTERING_PERCENT_SPEED (robot.role == attacker ? 0.8 : 1)
 
-#define ENTERING_PERCENT_SPEED 1
-// #define BRAKE_PERCENT_SPEED 1
+#define ENTERING_PERCENT_SPEED 0.9
+// #define ENTERING_PERCENT_SPEED 0.5
 #define MIN_VERTICAL_DISTANCE 12
 #define CAPTURE_BALL_TIMEOUT 500
+// #define CAPTURE_BALL_TIMEOUT 1000
 
 #define HEAD_PID_I_MAX 10
 #define HEAD_PID_MAX 50
@@ -47,6 +49,7 @@
 // #define HEAD_KP (robot.role == attacker ? 0.9 : 1.3)
 #define HEAD_KD 0.0
 #define HEAD_ROTATION_KP 1.3
+// #define HEAD_ROTATION_KP 2
 #define HEAD_ROTATION_I_MAX 100
 // #define HEAD_ROTATION_KI 0.0002
 #define HEAD_ROTATION_KI 0

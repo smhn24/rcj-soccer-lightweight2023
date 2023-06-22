@@ -327,14 +327,16 @@ void robot_brake(uint16_t time)
 void update_head_angle()
 {
     // static uint32_t sum_i = 0;
-    if (robot.camera_connection && goal.detection)
+    if (robot.camera_connection && goal.detection && goal.height < 65)
     {
         // sum_i += goal.width;
         // if (sum_i > HEAD_ROTATION_I_MAX)
         // {
         //     sum_i = HEAD_ROTATION_I_MAX;
         // }
-        robot.head_angle = -goal.width * HEAD_ROTATION_KP;
+        // robot.head_angle = -goal.width * HEAD_ROTATION_KP;
+        robot.head_angle = goal.width * HEAD_ROTATION_KP;
+        // robot.head_angle = goal.width;
         // robot.head_angle += sum_i * HEAD_ROTATION_KI;
         // robot.head_angle = -goal.width;
     }

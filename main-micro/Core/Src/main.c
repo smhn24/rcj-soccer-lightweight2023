@@ -153,8 +153,8 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM13_Init();
   /* USER CODE BEGIN 2 */
-  // robot.role = attacker;
-  robot.role = goal_keeper;
+  robot.role = attacker;
+  // robot.role = goal_keeper;
 
   HAL_UART_Receive_DMA(&huart5, openmv_data, OPENMV_DATA_LENGTH);
 
@@ -163,8 +163,8 @@ int main(void)
   LL_mDelay(100);
   MPU6050_Calibration();
   start_timers(); // TODO: Change place
-  LL_mDelay(500); //! Wait for BNO055 to be ready(Boot time)
-  // LL_mDelay(100); //! Wait for BNO055 to be ready(Boot time)
+  // LL_mDelay(500); //! Wait for BNO055 to be ready(Boot time)
+  LL_mDelay(100); //! Wait for BNO055 to be ready(Boot time)
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -194,7 +194,6 @@ int main(void)
     uart_error_handler(); //? Error handler for uart dma(openmv)
 
     measure_ball_data(sensors, &ball);
-    // get_ball(&ball);
     if (robot.role == attacker)
     {
       get_ball(&ball);
@@ -228,6 +227,15 @@ int main(void)
       {
         robot.in_out_area = false;
         robot.move_angle = robot.get_ball_move_angle;
+        if (robot.captured_ball)
+        {
+          robot.move_angle = -goal.width * 0.45;
+        }
+        else
+        {
+          robot.move_angle = robot.get_ball_move_angle;
+        }
+
         robot.percent_speed = robot.get_ball_percent_speed;
       }
     }
@@ -247,6 +255,7 @@ int main(void)
       if (!robot.must_brake)
       {
         robot_move(robot.move_angle, robot.percent_speed);
+        // robot_move(-90, 0.75);
       }
       else
       {
@@ -412,9 +421,6 @@ int main(void)
 
         robot.percent_speed = MoveSpeed;
         robot.move_angle = MoveAngle;
-
-        sprintf(tx_buff, "MS: %.2f    MA: %.2f\r\n", MoveSpeed, MoveAngle);
-        PRINT_BUFFER();
       }
 
       Task10ms -= 10;
