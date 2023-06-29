@@ -35,7 +35,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define TIME_COUNTER_LIMIT 10000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -47,10 +47,11 @@
 /* USER CODE BEGIN PV */
 // extern volatile Robot robot;
 extern Robot robot;
+extern SECOND_ROBOT second_robot;
 extern TSSP sensors[16];
 extern SRF left_srf, right_srf, back_srf;
 extern uint16_t width_temp[16][AVERAGE_DATA_NUMBER];
-extern uint16_t Task1ms, Task4ms, Task10ms, Task25ms, Task30ms, Task50ms;
+extern uint16_t Task1ms, Task4ms, Task10ms, Task25ms, Task30ms, Task50ms, Task250ms;
 // extern uint8_t Task4ms;
 /* USER CODE END PV */
 
@@ -106,7 +107,7 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-  TurnOnLED();
+  TurnOnLED(); //? Turn on the LED after micro crashing
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -724,7 +725,7 @@ void TIM7_IRQHandler(void)
   /* USER CODE BEGIN TIM7_IRQn 0 */
   if (robot.on_line_sensors == 0)
   {
-    if (robot.green_time < 10000)
+    if (robot.green_time < TIME_COUNTER_LIMIT)
     {
       robot.green_time++;
     }
@@ -735,14 +736,20 @@ void TIM7_IRQHandler(void)
   }
 
   robot.camera_connection = (robot.camera_refresh_time < 1000) ? true : false;
-  if (robot.camera_refresh_time < 10000)
+  if (robot.camera_refresh_time < TIME_COUNTER_LIMIT)
   {
     robot.camera_refresh_time++;
   }
 
+  second_robot.exist = (second_robot.refresh_time < 7500) ? true : false;
+  if (second_robot.refresh_time < TIME_COUNTER_LIMIT)
+  {
+    second_robot.refresh_time++;
+  }
+
   if (!CAPTURED_BALL_STATUS())
   {
-    if (robot.captured_ball_time < 10000)
+    if (robot.captured_ball_time < TIME_COUNTER_LIMIT)
       robot.captured_ball_time++;
   }
   else
@@ -756,6 +763,7 @@ void TIM7_IRQHandler(void)
   Task25ms++;
   Task30ms++;
   Task50ms++;
+  Task250ms++;
 
   LL_GPIO_ResetOutputPin(SRFs_TRIGGER_GPIO_Port, SRFs_TRIGGER_Pin);
   if (Task25ms > 24)

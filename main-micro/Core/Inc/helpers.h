@@ -18,6 +18,7 @@
 #define ToggleLED() LL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin)
 
 #define PRINT_BUFFER() HAL_UART_Transmit_DMA(&huart4, tx_buff, strlen(tx_buff))
+#define SEND_BUFFER() HAL_UART_Transmit_DMA(&huart4, tx_buff, strlen(tx_buff))
 
 typedef enum __attribute__((packed)) _direction
 {
@@ -64,7 +65,16 @@ typedef struct
     volatile bool must_brake;
     volatile bool camera_connection;
     volatile bool captured_ball;
+    volatile bool started; //? Set true after pressing start
 } Robot;
+
+typedef struct
+{
+    volatile bool exist;
+    volatile robot_role_t role;
+    volatile uint16_t ball_distance;
+    volatile uint16_t refresh_time;
+} SECOND_ROBOT;
 
 void start_timers();
 void uart_error_handler();

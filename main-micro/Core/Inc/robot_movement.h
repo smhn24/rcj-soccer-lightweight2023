@@ -6,52 +6,44 @@
 #include "tim.h"
 #include "tssp_helper.h"
 #include "helpers.h"
-#include "bno055.h"
 #include "line_sensor.h"
 #include "camera.h"
 
 #define MAX_VELOCITY 100
 #define MAX_PWM_VALUE 2800
-// #define GET_BALL_DISTANCE 10
-// #define GET_BALL_DISTANCE 9
+
 #define GET_BALL_DISTANCE 8
 #define LEFT_TOLERANCE_ANGLE 335
 #define RIGHT_TOLERANCE_ANGLE 25
 // #define MAX_DISTANCE 29.1 //? 11 + maxmimum distance
-// #define MAX_DISTANCE 31.1 //? 13 + maxmimum distance
-// #define MAX_DISTANCE 33.1 //? 15 + maxmimum distance
-#define MAX_DISTANCE 35.1 //? 17 + maxmimum distance
-// #define MAX_DISTANCE 72.1 //? 55 + maxmimum distance
-// #define MAX_SPEED_PERCENT (robot.role == attacker ? 0.6 : 0.8)
-// #define MAX_SPEED_PERCENT (robot.role == attacker ? 0.65 : 0.8)
-// #define MAX_SPEED_PERCENT 0.8
-#define MAX_SPEED_PERCENT 0.65
+// #define MAX_DISTANCE 35.1 //? 17 + maxmimum distance
+#define MAX_DISTANCE 72.1 //? 55 + maxmimum distance
+
+#ifndef MAXON_MOTORS
+#define MAX_SPEED_PERCENT 0.85
 #define MAX_GET_BALL_SPEED_PERCENT 0.75
+#define ENTERING_PERCENT_SPEED 1.0
+#define HEAD_KI 0.3
+#define HEAD_KD 0.0
+#define HEAD_KP 1.3
+#endif
 
-// #define MAX_GET_BALL_SPEED_PERCENT (robot.role == attacker ? 0.55 : 0.75)
-// #define MAX_GET_BALL_SPEED_PERCENT (robot.role == attacker ? 0.55 : 0.75)
-// #define ENTERING_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
-// #define ENTERING_PERCENT_SPEED (robot.role == attacker ? 0.9 : 1)
-// #define ENTERING_PERCENT_SPEED (robot.role == attacker ? 0.85 : 1)
-// #define ENTERING_PERCENT_SPEED (robot.role == attacker ? 0.8 : 1)
-
+#ifdef MAXON_MOTORS
+#define MAX_SPEED_PERCENT 0.65
+#define MAX_GET_BALL_SPEED_PERCENT 0.55
 #define ENTERING_PERCENT_SPEED 0.9
-// #define ENTERING_PERCENT_SPEED 0.5
+#define HEAD_KI 0.2
+#define HEAD_KD 0.0
+#define HEAD_KP 0.9
+#endif
+
 #define MIN_VERTICAL_DISTANCE 12
 #define CAPTURE_BALL_TIMEOUT 500
-// #define CAPTURE_BALL_TIMEOUT 1000
 
 #define HEAD_PID_I_MAX 10
 #define HEAD_PID_MAX 50
-#define HEAD_KI 0.3
-#define HEAD_KP 1.3
-// #define HEAD_KI (robot.role == attacker ? 0.2 : 0.3)
-// #define HEAD_KP (robot.role == attacker ? 0.9 : 1.3)
-#define HEAD_KD 0.0
 #define HEAD_ROTATION_KP 1.3
-// #define HEAD_ROTATION_KP 2
 #define HEAD_ROTATION_I_MAX 100
-// #define HEAD_ROTATION_KI 0.0002
 #define HEAD_ROTATION_KI 0
 
 #define KP 0.65
@@ -59,13 +51,12 @@
 #define KD 0.05
 
 // ################### Keeper #####################
-// #define LINE_KP 0.3
 #define LINE_KP 0.25
 #define LINE_KI 0.0025
 #define LINE_KD 6
-// #define BALL_KP 3.5
+
 #define BALL_KP 12.5
-// #define GO_TO_PENALTY_SPEED 0.46
+
 #define GO_TO_PENALTY_SPEED 0.46
 
 #define MOTORS_ENABLE() LL_GPIO_SetOutputPin(MOTORS_ENABLE_GPIO_Port, MOTORS_ENABLE_Pin)

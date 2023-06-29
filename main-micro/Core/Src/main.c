@@ -34,17 +34,14 @@
 
 #include "keys.h"
 #include "robot_movement.h"
-#include "bno055.h"
 #include "tssp_helper.h"
 #include "line_sensor.h"
 #include "helpers.h"
-#include "ssd1306.h"
-#include "I2Cdev.h"
-#include "MPU6050.h"
 #include "camera.h"
 #include "srf_helper.h"
 #include "attacker_strategy.h"
 #include "goal_keeper_strategy.h"
+#include "robot_connection.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,7 +51,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define MAXON_MOTORS
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -70,11 +67,13 @@ volatile SRF left_srf, right_srf, back_srf;
 volatile BALL ball;
 GOAL goal;
 Robot robot;
+SECOND_ROBOT second_robot;
 uint16_t width_temp[16][AVERAGE_DATA_NUMBER] = {0}; //? This array use for avarage filter from pulses
 uint8_t tx_buff[100];                               //? Data to send with uart
 bool line_sensors[20] = {0};                        //? NJL sensors status that sees the line(1) or not(0)
 
 uint8_t openmv_data[OPENMV_DATA_LENGTH] = {0};
+uint8_t second_robot_pocket[POCKET_LENGTH] = {0};
 
 float AyFilt = 0;
 float I_sigma = 0;
@@ -96,7 +95,7 @@ extern float average_x;
 extern float average_y;
 
 //* Tasks *//
-volatile uint16_t Task1ms = 0, Task4ms = 0, Task10ms = 0, Task25ms = 0, Task30ms = 0, Task50ms = 0;
+volatile uint16_t Task1ms = 0, Task4ms = 0, Task10ms = 0, Task25ms = 0, Task30ms = 0, Task50ms = 0, Task250ms = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -153,17 +152,18 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM13_Init();
   /* USER CODE BEGIN 2 */
-  robot.role = attacker;
-  // robot.role = goal_keeper;
+  // robot.role = attacker;
+  robot.role = goal_keeper;
+  robot.started = false;
 
-  HAL_UART_Receive_DMA(&huart5, openmv_data, OPENMV_DATA_LENGTH);
+  HAL_UART_Receive_DMA(&huart5, openmv_data, OPENMV_DATA_LENGTH);    //? Openmv camera
+  HAL_UART_Receive_DMA(&huart4, second_robot_pocket, POCKET_LENGTH); //? Robots connection
 
   LL_mDelay(100);
   MPU6050_Init();
   LL_mDelay(100);
   MPU6050_Calibration();
-  start_timers(); // TODO: Change place
-  // LL_mDelay(500); //! Wait for BNO055 to be ready(Boot time)
+  start_timers();
   LL_mDelay(100); //! Wait for BNO055 to be ready(Boot time)
   /* USER CODE END 2 */
 
@@ -186,7 +186,7 @@ int main(void)
       break;
     }
   }
-
+  robot.started = true;
   MOTORS_ENABLE();
 
   while (1)
@@ -213,23 +213,15 @@ int main(void)
     update_out_data();
 
     //? Update robot movement
-    // TODO: It must change
-    //! Shit condition
-    // if (!robot.line_detect && (!robot.in_out_area || abs(robot.out_angle - robot.get_ball_move_angle) > 45))
-    // {
-    //   robot.in_out_area = false;
-    //   robot.move_angle = robot.get_ball_move_angle;
-    //   robot.percent_speed = robot.get_ball_percent_speed;
-    // }
     if (robot.role == attacker)
     {
       if (!robot.line_detect && (!robot.in_out_area || abs(robot.out_angle - robot.get_ball_move_angle) > 45))
       {
         robot.in_out_area = false;
-        robot.move_angle = robot.get_ball_move_angle;
+        // robot.move_angle = robot.get_ball_move_angle;
         if (robot.captured_ball)
         {
-          robot.move_angle = -goal.width * 0.45;
+          robot.move_angle = -goal.width * 0.45; //? Change move angle with goal location
         }
         else
         {
@@ -255,7 +247,6 @@ int main(void)
       if (!robot.must_brake)
       {
         robot_move(robot.move_angle, robot.percent_speed);
-        // robot_move(-90, 0.75);
       }
       else
       {
@@ -429,10 +420,6 @@ int main(void)
     if (Task30ms > 29)
     {
       update_srf_data();
-      // if (robot.role == goal_keeper)
-      // {
-      //   update_srf_data();
-      // }
       Task30ms -= 30;
     }
 
@@ -448,6 +435,28 @@ int main(void)
       }
 
       Task50ms -= 50;
+    }
+
+    if (Task250ms > 249) //? This task is for connection of the robots
+    {
+      //? Send pocket to second robot
+      sprintf(tx_buff, "%c%03d", robot.role == attacker ? 'A' : 'G', ball.distance);
+      SEND_BUFFER();
+
+      //? Change task
+      if (!second_robot.exist)
+      {
+        robot.role = attacker;
+      }
+      else if (robot.role == second_robot.role)
+      {
+        robot.role = (ball.distance > second_robot.ball_distance) ? goal_keeper : attacker;
+      }
+
+      // sprintf(tx_buff, "H: %d    W: %d    D: %d\n", goal.height, goal.width, goal.detection);
+      // SEND_BUFFER();
+
+      Task250ms -= 250;
     }
     /* USER CODE END WHILE */
 
@@ -514,6 +523,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     {
       read_openmv();
     }
+  }
+  else if (huart->Instance == UART4)
+  {
+    second_robot.refresh_time = 0;
+    read_second_robot_pocket();
   }
 }
 /* USER CODE END 4 */

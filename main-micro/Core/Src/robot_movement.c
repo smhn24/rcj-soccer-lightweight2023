@@ -261,20 +261,13 @@ inline void get_ball(BALL *ball)
         else if (ball->angle >= RIGHT_TOLERANCE_ANGLE && ball->angle <= 180) //? Ball is right of the robot
         {
             // ball->get_ball_offset = (int)(asinf((float)11 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            // ball->get_ball_offset = (int)(asinf((float)55 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            // ball->get_ball_offset = (int)(asinf((float)13 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            // ball->get_ball_offset = (int)(asinf((float)15 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            ball->get_ball_offset = (int)(asinf((float)17 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
+            ball->get_ball_offset = (int)(asinf((float)55 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
             robot.get_ball_percent_speed = MAX_GET_BALL_SPEED_PERCENT;
         }
         else if (ball->angle > 180 && ball->angle <= LEFT_TOLERANCE_ANGLE) //? Ball is left of the robot
         {
             // ball->get_ball_offset = (int)(-asinf((float)11 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            // ball->get_ball_offset = (int)(-asinf((float)60 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            // ball->get_ball_offset = (int)(-asinf((float)55 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            // ball->get_ball_offset = (int)(-asinf((float)13 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            // ball->get_ball_offset = (int)(-asinf((float)15 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
-            ball->get_ball_offset = (int)(-asinf((float)17 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
+            ball->get_ball_offset = (int)(-asinf((float)55 / (float)(MAX_DISTANCE - ball->distance)) * RADIAN_TO_DEGREE);
             robot.get_ball_percent_speed = MAX_GET_BALL_SPEED_PERCENT;
         }
         robot.get_ball_move_angle = ball->get_ball_offset + ball->angle;
@@ -326,19 +319,9 @@ void robot_brake(uint16_t time)
 
 void update_head_angle()
 {
-    // static uint32_t sum_i = 0;
     if (robot.camera_connection && goal.detection && goal.height < 65)
     {
-        // sum_i += goal.width;
-        // if (sum_i > HEAD_ROTATION_I_MAX)
-        // {
-        //     sum_i = HEAD_ROTATION_I_MAX;
-        // }
-        // robot.head_angle = -goal.width * HEAD_ROTATION_KP;
-        robot.head_angle = goal.width * HEAD_ROTATION_KP;
-        // robot.head_angle = goal.width;
-        // robot.head_angle += sum_i * HEAD_ROTATION_KI;
-        // robot.head_angle = -goal.width;
+        robot.head_angle = -goal.width * HEAD_ROTATION_KP;
     }
     else
     {

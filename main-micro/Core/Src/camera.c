@@ -9,7 +9,7 @@ uint8_t openmv_sorted_data[OPENMV_DATA_LENGTH] = {0};
 
 void read_openmv()
 {
-    uint8_t first_index = 10;
+    uint8_t first_index = OPENMV_DATA_LENGTH + 1;
     for (uint8_t i = 0; i < OPENMV_DATA_LENGTH; i++)
     {
         if (openmv_data[i] == OPENMV_START_CHAR)
@@ -18,7 +18,7 @@ void read_openmv()
             break;
         }
     }
-    if (first_index != 10)
+    if (first_index != (OPENMV_DATA_LENGTH + 1))
     {
         for (uint8_t i = first_index, j = 0; i < OPENMV_DATA_LENGTH; i++, j++)
         {
@@ -48,8 +48,4 @@ void read_openmv()
     {
         goal.detection = true;
     }
-
-    // uint8_t tx[100];
-    // sprintf(tx, "%s      %s    W: %d   H: %d   D: %d\r\n", openmv_data, openmv_sorted_data, goal.width, goal.height, goal.detection);
-    // HAL_UART_Transmit(&huart4, tx, strlen(tx), 200);
 }

@@ -1,7 +1,7 @@
 #include "attacker_strategy.h"
-#include "helpers.h"
 
 extern Robot robot;
+extern GOAL goal;
 
 void attacker_strategy()
 {
